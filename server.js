@@ -49,21 +49,43 @@ async function getHotmartToken() {
 }
 
 async function checkHotmartSubscriber(email) {
-  // If Hotmart credentials not set, allow all (for testing)
   if (!HOTMART_CLIENT_ID || !HOTMART_CLIENT_SECRET) {
-    console.log('⚠️  Hotmart credentials not set — allowing all logins (test mode)');
+    console.log('test mode - allowing all');
     return true;
   }
   try {
     const token = await getHotmartToken();
-    const res = await fetch(
-      `https://developers.hotmart.com/payments/api/v1/subscriptions?subscriber_email=${encodeURIComponent(email)}&product_id=${HOTMART_PRODUCT_ID}&status=ACTIVE`,
-      { headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' } }
+    const emailLow = email.toLowerCase();
+    const VALID_STATUSES = ['APPROVED', 'COMPLETE', 'ACTIVE'];
+
+    // 1) Sales history - APPROVED ou COMPLETE
+    const salesRes = await fetch(
+      'https://developers.hotmart.com/payments/api/v1/sales/history?buyer_email=' + encodeURIComponent(email) + '&product_id=' + HOTMART_PRODUCT_ID,
+      { headers: { 'Authorization': 'Bearer ' + token } }
     );
-    const data = await res.json();
-    return data.items && data.items.length > 0;
+    const salesData = await salesRes.json();
+    console.log('Sales API status:', salesRes.status, JSON.stringify(salesData).slice(0,200));
+    if (salesData.items && salesData.items.some(i => i.purchase && VALID_STATUSES.includes(i.purchase.status))) {
+      console.log('Access granted via sales:', emailLow);
+      return true;
+    }
+
+    // 2) Subscriptions - ACTIVE
+    const subRes = await fetch(
+      'https://developers.hotmart.com/payments/api/v1/subscriptions?subscriber_email=' + encodeURIComponent(email) + '&product_id=' + HOTMART_PRODUCT_ID + '&status=ACTIVE',
+      { headers: { 'Authorization': 'Bearer ' + token } }
+    );
+    const subData = await subRes.json();
+    console.log('Sub API status:', subRes.status, JSON.stringify(subData).slice(0,200));
+    if (subData.items && subData.items.length > 0) {
+      console.log('Access granted via subscription:', emailLow);
+      return true;
+    }
+
+    console.log('Access denied for:', emailLow);
+    return false;
   } catch (e) {
-    console.error('Hotmart check error:', e.message);
+    console.error('Hotmart error:', e.message);
     return false;
   }
 }
@@ -83,7 +105,7 @@ app.post('/api/login', async (req, res) => {
   const token = jwt.sign(
     { email: email.toLowerCase().trim(), ts: Date.now() },
     JWT_SECRET,
-    { expiresIn: '30d' }
+    { expiresIn: '1d' }
   );
   res.json({ token, email });
 });
