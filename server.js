@@ -33,16 +33,17 @@ let hotmartTokenExpiry = 0;
 
 async function getHotmartToken() {
   if (hotmartToken && Date.now() < hotmartTokenExpiry) return hotmartToken;
-  const res = await fetch('https://api-sec-vlc.hotmart.com/security/oauth/token', {
+  const basic = Buffer.from(HOTMART_CLIENT_ID + ':' + HOTMART_CLIENT_SECRET).toString('base64');
+  const res = await fetch('https://api-sec-vlc.hotmart.com/security/oauth/token?grant_type=client_credentials', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      grant_type: 'client_credentials',
-      client_id: HOTMART_CLIENT_ID,
-      client_secret: HOTMART_CLIENT_SECRET
-    })
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'Authorization': 'Basic ' + basic
+    }
   });
-  const data = await res.json();
+  const text = await res.text();
+  console.log('Hotmart token response:', res.status, text.slice(0, 200));
+  const data = JSON.parse(text);
   hotmartToken = data.access_token;
   hotmartTokenExpiry = Date.now() + (data.expires_in - 60) * 1000;
   return hotmartToken;
