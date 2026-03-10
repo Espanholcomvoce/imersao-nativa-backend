@@ -26,6 +26,7 @@ const JWT_SECRET          = process.env.JWT_SECRET || 'imersao-nativa-secret-202
 const HOTMART_CLIENT_ID   = process.env.HOTMART_CLIENT_ID;
 const HOTMART_CLIENT_SECRET = process.env.HOTMART_CLIENT_SECRET;
 const HOTMART_PRODUCT_ID  = process.env.HOTMART_PRODUCT_ID;
+const OPENAI_API_KEY      = process.env.OPENAI_API_KEY; // NUEVO
 
 // ── Hotmart OAuth token cache ──────────────────────────────────────────────
 let hotmartToken = null;
@@ -188,6 +189,122 @@ app.post('/api/verify', requireAuth, async (req, res) => {
   if (!isActive) return res.status(403).json({ error: 'Assinatura inativa.' });
   res.json({ ok: true, email: req.user.email });
 });
+
+// ═══════════════════════════════════════════════════════════════════════════
+// NUEVO: OPENAI REALTIME API ENDPOINTS
+// ═══════════════════════════════════════════════════════════════════════════
+
+// In-memory storage for realtime usage (en producción usarías PostgreSQL)
+const realtimeUsage = new Map(); // Map<email, { date: string, minutes: number, sessions: number }>
+const realtimeSessions = new Map(); // Map<sessionId, { email, level, startTime }>
+
+// ── /api/realtime/usage-today ──────────────────────────────────────────────
+app.get('/api/realtime/usage-today', requireAuth, (req, res) => {
+  const email = req.user.email;
+  const today = new Date().toISOString().split('T')[0];
+  
+  const usage = realtimeUsage.get(email);
+  
+  if (!usage || usage.date !== today) {
+    return res.json({ minutesUsed: 0, sessionsToday: 0 });
+  }
+  
+  res.json({ minutesUsed: usage.minutes, sessionsToday: usage.sessions });
+});
+
+// ── /api/realtime/start-session ────────────────────────────────────────────
+app.post('/api/realtime/start-session', requireAuth, async (req, res) => {
+  const email = req.user.email;
+  const { level } = req.body;
+  const today = new Date().toISOString().split('T')[0];
+  
+  // Verificar límite diario
+  const usage = realtimeUsage.get(email);
+  const minutesUsed = (usage && usage.date === today) ? usage.minutes : 0;
+  
+  if (minutesUsed >= 15) {
+    return res.status(429).json({ 
+      error: 'Você já usou seus 15 minutos de hoje. Tente novamente amanhã.' 
+    });
+  }
+  
+  try {
+    // Obtener ephemeral token de OpenAI
+    const openaiRes = await fetch('https://api.openai.com/v1/realtime/sessions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-realtime-preview-2024-12-17',
+        voice: 'alloy'
+      })
+    });
+    
+    if (!openaiRes.ok) {
+      const errorText = await openaiRes.text();
+      console.error('OpenAI Realtime error:', openaiRes.status, errorText);
+      throw new Error('Erro ao criar sessão OpenAI');
+    }
+    
+    const data = await openaiRes.json();
+    const sessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    
+    // Guardar sesión
+    realtimeSessions.set(sessionId, {
+      email,
+      level: level || 'B1',
+      startTime: Date.now()
+    });
+    
+    res.json({
+      sessionId,
+      ephemeralToken: data.client_secret.value,
+      expiresAt: data.client_secret.expires_at
+    });
+    
+  } catch (e) {
+    console.error('Start session error:', e.message);
+    res.status(500).json({ error: 'Erro ao iniciar sessão. Tente novamente.' });
+  }
+});
+
+// ── /api/realtime/end-session ──────────────────────────────────────────────
+app.post('/api/realtime/end-session', requireAuth, (req, res) => {
+  const email = req.user.email;
+  const { sessionId, durationMinutes } = req.body;
+  const today = new Date().toISOString().split('T')[0];
+  
+  // Verificar que la sesión existe y pertenece al usuario
+  const session = realtimeSessions.get(sessionId);
+  if (!session || session.email !== email) {
+    return res.status(404).json({ error: 'Sessão não encontrada.' });
+  }
+  
+  // Actualizar uso diario
+  const currentUsage = realtimeUsage.get(email);
+  
+  if (!currentUsage || currentUsage.date !== today) {
+    realtimeUsage.set(email, {
+      date: today,
+      minutes: durationMinutes,
+      sessions: 1
+    });
+  } else {
+    currentUsage.minutes += durationMinutes;
+    currentUsage.sessions += 1;
+  }
+  
+  // Remover sesión
+  realtimeSessions.delete(sessionId);
+  
+  console.log(`Session ended: ${email} - ${durationMinutes} min`);
+  
+  res.json({ ok: true, totalMinutesToday: realtimeUsage.get(email).minutes });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
 
 // ── Health check ───────────────────────────────────────────────────────────
 app.get('/', (req, res) => res.json({ status: 'Imersão Nativa backend ok' }));
