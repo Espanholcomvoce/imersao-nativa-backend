@@ -230,9 +230,9 @@ router.get('/vocab', authMiddleware, async (req, res) => {
         text: cleanText,
         model_id: 'eleven_multilingual_v2',
         voice_settings: {
-          stability: 0.55,
-          similarity_boost: 0.80,
-          style: 0.0,
+          stability: 0.35,
+          similarity_boost: 0.85,
+          style: 0.40,
           use_speaker_boost: true
         }
       },
