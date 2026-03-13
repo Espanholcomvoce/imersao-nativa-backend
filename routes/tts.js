@@ -208,7 +208,8 @@ router.get('/vocab', authMiddleware, async (req, res) => {
   }
 
   const cleanText = text.trim();
-  const hash = crypto.createHash('md5').update(`valentina:${cleanText}`).digest('hex');
+  // v2 = nova versão conversacional da Valentina (muda o hash, invalida cache antigo)
+  const hash = crypto.createHash('md5').update(`valentina_v2:${cleanText}`).digest('hex');
   const filePath = path.join(VOCAB_CACHE_DIR, `${hash}.mp3`);
 
   // Serve do cache em disco se já existe
