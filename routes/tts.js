@@ -10,7 +10,18 @@ const express = require('express');
 const router = express.Router();
 const axios = require('axios');
 const crypto = require('crypto');
+const fs = require('fs');
+const path = require('path');
 const { authMiddleware } = require('../middleware/auth');
+
+// ─────────────────────────────────────────────
+// CACHE EM DISCO para vocabulário SRE
+// Salva MP3s em /tmp/vocab-audio/ no Railway
+// ─────────────────────────────────────────────
+const VOCAB_CACHE_DIR = path.join('/tmp', 'vocab-audio');
+if (!fs.existsSync(VOCAB_CACHE_DIR)) {
+  fs.mkdirSync(VOCAB_CACHE_DIR, { recursive: true });
+}
 
 const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY;
 const ELEVENLABS_BASE = 'https://api.elevenlabs.io/v1';
@@ -175,6 +186,86 @@ router.post('/', authMiddleware, async (req, res) => {
     }
 
     res.status(500).json({ error: 'Erro ao gerar áudio. Tente novamente.' });
+  }
+});
+
+// ─────────────────────────────────────────────
+// GET /api/tts/vocab?text=...&type=word|example
+// TTS para vocabulário SRE — cache em disco
+// Voz fixa: Valentina (mexicana, feminina)
+// Não precisa de auth pois é recurso estático
+// ─────────────────────────────────────────────
+const VALENTINA_ID = 'cgSgspJ2msm6clMCkdW9';
+
+router.get('/vocab', authMiddleware, async (req, res) => {
+  const { text, type = 'word' } = req.query;
+
+  if (!text || text.trim().length === 0) {
+    return res.status(400).json({ error: 'text é obrigatório.' });
+  }
+  if (text.length > 500) {
+    return res.status(400).json({ error: 'Texto muito longo.' });
+  }
+
+  const cleanText = text.trim();
+  const hash = crypto.createHash('md5').update(`valentina:${cleanText}`).digest('hex');
+  const filePath = path.join(VOCAB_CACHE_DIR, `${hash}.mp3`);
+
+  // Serve do cache em disco se já existe
+  if (fs.existsSync(filePath)) {
+    console.log(`[TTS-VOCAB] Cache disco HIT — ${cleanText.substring(0,30)}`);
+    res.set('Content-Type', 'audio/mpeg');
+    res.set('X-Cache', 'HIT');
+    res.set('Cache-Control', 'public, max-age=86400');
+    return res.sendFile(filePath);
+  }
+
+  // Gera com ElevenLabs
+  try {
+    console.log(`[TTS-VOCAB] Gerando — ${cleanText.substring(0,50)}`);
+
+    const response = await axios.post(
+      `${ELEVENLABS_BASE}/text-to-speech/${VALENTINA_ID}`,
+      {
+        text: cleanText,
+        model_id: 'eleven_multilingual_v2',
+        voice_settings: {
+          stability: 0.55,
+          similarity_boost: 0.80,
+          style: 0.0,
+          use_speaker_boost: true
+        }
+      },
+      {
+        headers: {
+          'Accept': 'audio/mpeg',
+          'xi-api-key': ELEVENLABS_API_KEY,
+          'Content-Type': 'application/json'
+        },
+        responseType: 'arraybuffer',
+        timeout: 30000
+      }
+    );
+
+    const audioBuffer = Buffer.from(response.data);
+
+    // Salva em disco para cache permanente
+    fs.writeFileSync(filePath, audioBuffer);
+    console.log(`[TTS-VOCAB] ✅ Salvo ${audioBuffer.length} bytes — ${hash}.mp3`);
+
+    res.set('Content-Type', 'audio/mpeg');
+    res.set('Content-Length', audioBuffer.length);
+    res.set('X-Cache', 'MISS');
+    res.set('Cache-Control', 'public, max-age=86400');
+    res.send(audioBuffer);
+
+  } catch (err) {
+    const status = err.response?.status;
+    console.error(`[TTS-VOCAB] Erro (${status}):`, err.message);
+    if (status === 429) {
+      return res.status(429).json({ error: 'Limite de áudio atingido. Tente em alguns minutos.' });
+    }
+    res.status(500).json({ error: 'Erro ao gerar áudio.' });
   }
 });
 
