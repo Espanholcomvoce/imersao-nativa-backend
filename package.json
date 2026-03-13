@@ -1,20 +1,31 @@
 {
   "name": "imersao-nativa-backend",
   "version": "1.0.0",
-  "description": "Backend seguro para Imersão Nativa",
+  "description": "Backend da plataforma Imersão Nativa - Espanhol para brasileiros",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "node server.js"
-  },
-  "dependencies": {
-    "express": "^4.18.2",
-    "cors": "^2.8.5",
-    "node-fetch": "^2.7.0",
-    "jsonwebtoken": "^9.0.2",
-    "dotenv": "^16.3.1"
+    "dev": "nodemon server.js"
   },
   "engines": {
     "node": ">=18.0.0"
-  }
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0",
+    "axios": "^1.7.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "express-rate-limit": "^7.3.1",
+    "helmet": "^7.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "morgan": "^1.10.0",
+    "ws": "^8.17.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.3"
+  },
+  "keywords": ["espanhol", "DELE", "SIELE", "aprendizado"],
+  "author": "Alejandra Fajardo",
+  "license": "UNLICENSED"
 }
