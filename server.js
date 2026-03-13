@@ -44,6 +44,8 @@ const allowedOrigins = [
   'http://127.0.0.1:5500',
   'http://localhost:8080',
   'https://app.espanholcomvoce.com',
+  'https://imersao-nativa.espanholcvfaixapreta.workers.dev',
+
 ].filter(Boolean);
 
 app.use(cors({
