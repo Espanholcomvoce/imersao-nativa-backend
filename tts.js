@@ -18,7 +18,7 @@ const { authMiddleware } = require('../middleware/auth');
 // CACHE EM DISCO para vocabulário SRE
 // Salva MP3s em /tmp/vocab-audio/ no Railway
 // ─────────────────────────────────────────────
-const VOCAB_CACHE_DIR = path.join('/tmp', 'vocab-audio');
+const VOCAB_CACHE_DIR = path.join('/tmp', 'vocab-audio-v2');
 if (!fs.existsSync(VOCAB_CACHE_DIR)) {
   fs.mkdirSync(VOCAB_CACHE_DIR, { recursive: true });
 }
@@ -209,7 +209,7 @@ router.get('/vocab', authMiddleware, async (req, res) => {
 
   const cleanText = text.trim();
   // v2 = nova versão conversacional da Valentina (muda o hash, invalida cache antigo)
-  const hash = crypto.createHash('md5').update(`valentina_v4:${cleanText}`).digest('hex');
+  const hash = crypto.createHash('md5').update(`valentina_v5:${cleanText}`).digest('hex');
   const filePath = path.join(VOCAB_CACHE_DIR, `${hash}.mp3`);
 
   // Serve do cache em disco se já existe
