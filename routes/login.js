@@ -16,6 +16,7 @@ const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
 const HOTMART_CLIENT_ID = process.env.HOTMART_CLIENT_ID;
 const HOTMART_CLIENT_SECRET = process.env.HOTMART_CLIENT_SECRET;
+const HOTMART_BASIC = process.env.HOTMART_BASIC;
 const HOTMART_PRODUCT_ID = process.env.HOTMART_PRODUCT_ID;
 
 // ─────────────────────────────────────────────
@@ -49,15 +50,12 @@ async function getHotmartToken() {
     return hotmartTokenCache.token;
   }
 
-  // Basic token = Base64(CLIENT_ID:CLIENT_SECRET)
-  const basicToken = Buffer.from(`${HOTMART_CLIENT_ID}:${HOTMART_CLIENT_SECRET}`).toString('base64');
-
   const response = await axios.post(
     'https://api-sec-vlc.hotmart.com/security/oauth/token',
     `grant_type=client_credentials&client_id=${HOTMART_CLIENT_ID}&client_secret=${HOTMART_CLIENT_SECRET}`,
     {
       headers: {
-        'Authorization': `Basic ${basicToken}`,
+        'Authorization': `Basic ${HOTMART_BASIC}`,
         'Content-Type': 'application/x-www-form-urlencoded'
       },
       timeout: 10000
