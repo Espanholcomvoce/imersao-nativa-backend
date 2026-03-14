@@ -97,7 +97,7 @@ async function validateHotmart(email) {
     const token = await getHotmartToken();
 
     const response = await axios.get(
-      'https://developers.hotmart.com/payments/api/v1/sales',
+      'https://developers.hotmart.com/payments/api/v1/sales/users',
       {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -112,21 +112,14 @@ async function validateHotmart(email) {
     );
 
     const items = response.data?.items || [];
-    console.log(`[LOGIN] Total de vendas para ${email}: ${items.length}`);
-    if (items[0]) {
-      console.log(`[LOGIN] Primeiro item:`, JSON.stringify(items[0]));
-    }
-
-    // Verifica se tem compra com status aprovado/completo
-    const VALID_STATUSES = [
-      'APPROVED', 'COMPLETE', 'COMPLETED', 'CONFIRMED', 'ACTIVE',
-      'APROVADA', 'COMPLETA', 'APROVADO', 'COMPLETO'
-    ];
-    const hasAccess = items.some(item => {
-      const status = (item.purchase?.status || item.status || '').toUpperCase().trim();
-      console.log(`[LOGIN] Status: "${status}"`);
-      return VALID_STATUSES.includes(status);
+    console.log(`[LOGIN] Total registros para ${email}: ${items.length}`);
+    // Loga TUDO para ver a estrutura completa
+    items.forEach((item, i) => {
+      console.log(`[LOGIN] Item ${i}:`, JSON.stringify(item));
     });
+
+    // Por enquanto permite acesso se encontrou qualquer registro
+    const hasAccess = items.length > 0;
 
     setCache(email, hasAccess);
     console.log(`[LOGIN] Hotmart para ${email}: ${hasAccess ? '✅ acesso aprovado' : '❌ sem compra válida'} (${items.length} registros)`);
