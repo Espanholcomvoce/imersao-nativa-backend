@@ -208,34 +208,25 @@ router.get('/vocab', authMiddleware, async (req, res) => {
   }
 
   const cleanText = text.trim();
-  // v2 = nova versão conversacional da Valentina (muda o hash, invalida cache antigo)
-  const hash = crypto.createHash('md5').update(`valentina_v6:${cleanText}`).digest('hex');
-  const filePath = path.join(VOCAB_CACHE_DIR, `${hash}.mp3`);
+  const hash = crypto.createHash('md5').update('valentina_v7:' + cleanText).digest('hex');
+  const filePath = path.join(VOCAB_CACHE_DIR, hash + '.mp3');
 
-  // Serve do cache em disco se já existe
   if (fs.existsSync(filePath)) {
-    console.log(`[TTS-VOCAB] Cache disco HIT — ${cleanText.substring(0,30)}`);
+    console.log('[TTS-VOCAB] Cache disco HIT — ' + cleanText.substring(0,30));
     res.set('Content-Type', 'audio/mpeg');
     res.set('X-Cache', 'HIT');
     res.set('Cache-Control', 'public, max-age=86400');
     return res.sendFile(filePath);
   }
 
-  // Gera com ElevenLabs
   try {
-    console.log(`[TTS-VOCAB] Gerando — ${cleanText.substring(0,50)}`);
+    console.log('[TTS-VOCAB] Gerando — ' + cleanText.substring(0,50));
 
     const response = await axios.post(
-      `${ELEVENLABS_BASE}/text-to-speech/${VALENTINA_ID}`,
+      ELEVENLABS_BASE + '/text-to-speech/' + VALENTINA_ID,
       {
         text: cleanText,
-        model_id: 'eleven_multilingual_v2',
-        voice_settings: {
-          stability: 0.50,
-          similarity_boost: 0.85,
-          style: 0.25,
-          use_speaker_boost: true
-        }
+        model_id: 'eleven_multilingual_v2'
       },
       {
         headers: {
@@ -249,10 +240,8 @@ router.get('/vocab', authMiddleware, async (req, res) => {
     );
 
     const audioBuffer = Buffer.from(response.data);
-
-    // Salva em disco para cache permanente
     fs.writeFileSync(filePath, audioBuffer);
-    console.log(`[TTS-VOCAB] ✅ Salvo ${audioBuffer.length} bytes — ${hash}.mp3`);
+    console.log('[TTS-VOCAB] ✅ Salvo ' + audioBuffer.length + ' bytes — ' + hash + '.mp3');
 
     res.set('Content-Type', 'audio/mpeg');
     res.set('Content-Length', audioBuffer.length);
@@ -261,14 +250,15 @@ router.get('/vocab', authMiddleware, async (req, res) => {
     res.send(audioBuffer);
 
   } catch (err) {
-    const status = err.response?.status;
-    console.error(`[TTS-VOCAB] Erro (${status}):`, err.message);
+    const status = err.response && err.response.status;
+    console.error('[TTS-VOCAB] Erro (' + status + '):', err.message);
     if (status === 429) {
       return res.status(429).json({ error: 'Limite de áudio atingido. Tente em alguns minutos.' });
     }
     res.status(500).json({ error: 'Erro ao gerar áudio.' });
   }
 });
+
 
 // ─────────────────────────────────────────────
 // GET /api/tts/voices
