@@ -49,16 +49,17 @@ async function getHotmartToken() {
     return hotmartTokenCache.token;
   }
 
+  // Basic token = Base64(CLIENT_ID:CLIENT_SECRET)
+  const basicToken = Buffer.from(`${HOTMART_CLIENT_ID}:${HOTMART_CLIENT_SECRET}`).toString('base64');
+
   const response = await axios.post(
     'https://api-sec-vlc.hotmart.com/security/oauth/token',
-    null,
+    `grant_type=client_credentials&client_id=${HOTMART_CLIENT_ID}&client_secret=${HOTMART_CLIENT_SECRET}`,
     {
-      params: {
-        grant_type: 'client_credentials',
-        client_id: HOTMART_CLIENT_ID,
-        client_secret: HOTMART_CLIENT_SECRET
+      headers: {
+        'Authorization': `Basic ${basicToken}`,
+        'Content-Type': 'application/x-www-form-urlencoded'
       },
-      headers: { 'Content-Type': 'application/json' },
       timeout: 10000
     }
   );
