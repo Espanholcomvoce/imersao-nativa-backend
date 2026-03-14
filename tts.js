@@ -195,7 +195,7 @@ router.post('/', authMiddleware, async (req, res) => {
 // Voz fixa: Valentina (mexicana, feminina)
 // Não precisa de auth pois é recurso estático
 // ─────────────────────────────────────────────
-const VALENTINA_ID = 'xzWD1ftyNVsuUMY2ll3j';
+const VALENTINA_ID = 'j7e3J6ksqsziQcIGyAWI';
 
 router.get('/vocab', authMiddleware, async (req, res) => {
   const { text, type = 'word' } = req.query;
@@ -209,7 +209,7 @@ router.get('/vocab', authMiddleware, async (req, res) => {
 
   const cleanText = text.trim();
   // v2 = nova versão conversacional da Valentina (muda o hash, invalida cache antigo)
-  const hash = crypto.createHash('md5').update(`valentina_v5:${cleanText}`).digest('hex');
+  const hash = crypto.createHash('md5').update(`valentina_v6:${cleanText}`).digest('hex');
   const filePath = path.join(VOCAB_CACHE_DIR, `${hash}.mp3`);
 
   // Serve do cache em disco se já existe
