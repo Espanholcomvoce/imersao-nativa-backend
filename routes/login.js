@@ -113,9 +113,8 @@ async function validateHotmart(email) {
 
     const items = response.data?.items || [];
 
-    // Loga os status encontrados para diagnóstico
-    const statuses = items.map(item => item.purchase?.status || 'N/A');
-    console.log(`[LOGIN] Statuses encontrados para ${email}:`, JSON.stringify(statuses));
+    // Loga estrutura completa para diagnóstico
+    console.log(`[LOGIN] Estrutura completa para ${email}:`, JSON.stringify(items[0] || {}));
 
     // Verifica se tem compra com status aprovado/completo
     const VALID_STATUSES = [
