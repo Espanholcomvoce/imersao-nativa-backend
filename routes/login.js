@@ -113,11 +113,22 @@ async function validateHotmart(email) {
 
     const items = response.data?.items || [];
 
+    // Loga os status encontrados para diagnóstico
+    const statuses = items.map(item => item.purchase?.status || 'N/A');
+    console.log(`[LOGIN] Statuses encontrados para ${email}:`, JSON.stringify(statuses));
+
     // Verifica se tem compra com status aprovado/completo
-    const VALID_STATUSES = ['APPROVED', 'COMPLETE', 'COMPLETED'];
-    const hasAccess = items.some(item =>
-      VALID_STATUSES.includes(item.purchase?.status?.toUpperCase?.() || '')
-    );
+    const VALID_STATUSES = [
+      // Inglês (API)
+      'APPROVED', 'COMPLETE', 'COMPLETED', 'CONFIRMED', 'ACTIVE',
+      // Português (como aparece no painel)
+      'APROVADA', 'COMPLETA', 'APROVADO', 'COMPLETO'
+    ];
+    const hasAccess = items.some(item => {
+      const status = (item.purchase?.status || '').toUpperCase().trim();
+      console.log(`[LOGIN] Status individual: "${status}"`);
+      return VALID_STATUSES.includes(status);
+    });
 
     setCache(email, hasAccess);
     console.log(`[LOGIN] Hotmart para ${email}: ${hasAccess ? '✅ acesso aprovado' : '❌ sem compra válida'} (${items.length} registros)`);
