@@ -1,6 +1,6 @@
 /**
  * IMERSÃO NATIVA - Rota de Login
- * Valida email no Hotmart e gera JWT
+ * Valida email via OAuth Hotmart (compra única)
  * 
  * POST /api/login        → faz login
  * GET  /api/login/verify → verifica se o token ainda é válido
@@ -13,42 +13,77 @@ const axios = require('axios');
 const { authMiddleware } = require('../middleware/auth');
 
 const JWT_SECRET = process.env.JWT_SECRET;
-const HOTMART_HOTTOK = process.env.HOTMART_HOTTOK;
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
+const HOTMART_CLIENT_ID = process.env.HOTMART_CLIENT_ID;
+const HOTMART_CLIENT_SECRET = process.env.HOTMART_CLIENT_SECRET;
+const HOTMART_PRODUCT_ID = process.env.HOTMART_PRODUCT_ID;
 
 // ─────────────────────────────────────────────
-// Cache em memória para não chamar Hotmart toda vez
-// Evita lentidão e rate limiting da API deles
+// Cache em memória — evita chamar Hotmart toda vez
 // ─────────────────────────────────────────────
-const subscriptionCache = new Map();
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutos
+const accessCache = new Map();
+const CACHE_TTL = 10 * 60 * 1000; // 10 minutos
 
 function getCached(email) {
-  const entry = subscriptionCache.get(email);
+  const entry = accessCache.get(email);
   if (!entry) return null;
   if (Date.now() - entry.timestamp > CACHE_TTL) {
-    subscriptionCache.delete(email);
+    accessCache.delete(email);
     return null;
   }
   return entry.hasAccess;
 }
 
 function setCache(email, hasAccess) {
-  subscriptionCache.set(email, { hasAccess, timestamp: Date.now() });
+  accessCache.set(email, { hasAccess, timestamp: Date.now() });
 }
 
 // ─────────────────────────────────────────────
-// Validação no Hotmart
+// Gera token OAuth do Hotmart
+// ─────────────────────────────────────────────
+let hotmartTokenCache = null;
+
+async function getHotmartToken() {
+  // Reutiliza token se ainda válido (expira em 1h, renova com 5min de margem)
+  if (hotmartTokenCache && hotmartTokenCache.expiresAt > Date.now() + 5 * 60 * 1000) {
+    return hotmartTokenCache.token;
+  }
+
+  const response = await axios.post(
+    'https://api-sec-vlc.hotmart.com/security/oauth/token',
+    null,
+    {
+      params: {
+        grant_type: 'client_credentials',
+        client_id: HOTMART_CLIENT_ID,
+        client_secret: HOTMART_CLIENT_SECRET
+      },
+      headers: { 'Content-Type': 'application/json' },
+      timeout: 10000
+    }
+  );
+
+  hotmartTokenCache = {
+    token: response.data.access_token,
+    expiresAt: Date.now() + (response.data.expires_in * 1000)
+  };
+
+  console.log('[LOGIN] Token Hotmart gerado com sucesso');
+  return hotmartTokenCache.token;
+}
+
+// ─────────────────────────────────────────────
+// Valida se email tem compra aprovada no Hotmart
 // ─────────────────────────────────────────────
 async function validateHotmart(email) {
-  // 1. Verifica cache primeiro
+  // 1. Verifica cache
   const cached = getCached(email);
   if (cached !== null) {
     console.log(`[LOGIN] Cache hit para ${email}: ${cached}`);
     return cached;
   }
 
-  // 2. Verifica emails de demo (útil para testes)
+  // 2. Emails de demo (para testes)
   if (process.env.DEMO_EMAILS) {
     const demos = process.env.DEMO_EMAILS.split(',').map(e => e.trim().toLowerCase());
     if (demos.includes(email)) {
@@ -58,39 +93,47 @@ async function validateHotmart(email) {
     }
   }
 
-  // 3. Chama API do Hotmart
+  // 3. Consulta API Hotmart
   try {
+    const token = await getHotmartToken();
+
     const response = await axios.get(
-      'https://developers.hotmart.com/payments/api/v1/subscriptions',
+      'https://developers.hotmart.com/payments/api/v1/sales/users',
       {
         headers: {
-          'Authorization': `Bearer ${HOTMART_HOTTOK}`,
+          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
         params: {
-          subscriber_email: email,
-          status: 'ACTIVE'
+          buyer_email: email,
+          product_id: HOTMART_PRODUCT_ID
         },
         timeout: 10000
       }
     );
 
-    const hasAccess = (response.data?.items?.length ?? 0) > 0;
+    const items = response.data?.items || [];
+
+    // Verifica se tem compra com status aprovado/completo
+    const VALID_STATUSES = ['APPROVED', 'COMPLETE', 'COMPLETED'];
+    const hasAccess = items.some(item =>
+      VALID_STATUSES.includes(item.purchase?.status?.toUpperCase?.() || '')
+    );
+
     setCache(email, hasAccess);
-    console.log(`[LOGIN] Hotmart para ${email}: ${hasAccess ? '✅ ativo' : '❌ sem acesso'}`);
+    console.log(`[LOGIN] Hotmart para ${email}: ${hasAccess ? '✅ acesso aprovado' : '❌ sem compra válida'} (${items.length} registros)`);
     return hasAccess;
 
   } catch (err) {
     const status = err.response?.status;
     console.error(`[LOGIN] Erro Hotmart (${status}):`, err.message);
 
-    // Se Hotmart retornar 401/403, a chave está errada — não deixa passar
+    // Credenciais inválidas — não deixa passar
     if (status === 401 || status === 403) {
-      throw new Error('Erro de configuração do sistema de pagamentos.');
+      throw new Error('Erro de configuração do sistema. Contate o suporte.');
     }
 
-    // Para outros erros (timeout, 5xx), deixa passar temporariamente
-    // para não bloquear usuários por falha da Hotmart
+    // Hotmart fora do ar — permite temporariamente para não bloquear alunos
     console.warn(`[LOGIN] Hotmart indisponível — permitindo acesso temporário para ${email}`);
     return true;
   }
@@ -103,7 +146,6 @@ async function validateHotmart(email) {
 router.post('/', async (req, res) => {
   const { email } = req.body;
 
-  // Validações básicas
   if (!email) {
     return res.status(400).json({ error: 'Email é obrigatório.' });
   }
@@ -120,12 +162,11 @@ router.post('/', async (req, res) => {
 
     if (!hasAccess) {
       return res.status(403).json({
-        error: 'Acesso não encontrado. Verifique se você tem uma assinatura ativa.',
-        action: 'Acesse o Hotmart para verificar sua assinatura ou entre em contato com o suporte.'
+        error: 'Acesso não encontrado. Verifique se você adquiriu o Programa Imersão Nativa.',
+        action: 'Acesse o Hotmart para verificar sua compra ou entre em contato com o suporte.'
       });
     }
 
-    // Gera o token JWT
     const token = jwt.sign(
       { email: normalizedEmail },
       JWT_SECRET,
@@ -149,7 +190,6 @@ router.post('/', async (req, res) => {
 
 // ─────────────────────────────────────────────
 // GET /api/login/verify
-// Verifica se o token atual ainda é válido
 // Header: Authorization: Bearer <token>
 // ─────────────────────────────────────────────
 router.get('/verify', authMiddleware, (req, res) => {
