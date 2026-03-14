@@ -1,221 +1,251 @@
 /**
- * IMERSÃO NATIVA - Rota de Áudios dos Exames
- * Serve metadados e arquivos MP3 dos exercícios DELE/SIELE
+ * IMERSÃO NATIVA - Áudios dos Exames DELE/SIELE
+ * Gera diálogos com ElevenLabs on-demand e cacheia em disco
  *
- * GET /api/exam-audio/list          → lista todos os exercícios
- * GET /api/exam-audio/stats         → estatísticas gerais
- * GET /api/exam-audio/:id           → metadados de um exercício
- * GET /api/exam-audio/:id/audio     → serve o arquivo MP3
+ * GET /api/exam-audio/list        → lista exercícios
+ * GET /api/exam-audio/:id         → metadados do exercício
+ * GET /api/exam-audio/:id/audio   → gera/serve MP3 do diálogo completo
+ * GET /api/exam-audio/:id/line/:n → gera/serve MP3 de uma linha
  */
 
 const express = require('express');
 const router = express.Router();
 const path = require('path');
 const fs = require('fs');
+const axios = require('axios');
+const { authMiddleware } = require('../middleware/auth');
+
+const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY;
+const ELEVENLABS_BASE = 'https://api.elevenlabs.io/v1';
+
+// Cache em disco
+const EXAM_CACHE_DIR = path.join('/tmp', 'exam-audio');
+if (!fs.existsSync(EXAM_CACHE_DIR)) {
+  fs.mkdirSync(EXAM_CACHE_DIR, { recursive: true });
+}
+
+// ─────────────────────────────────────────────
+// VOZES — sem voice_settings para soar natural
+// igual ao player do ElevenLabs
+// ─────────────────────────────────────────────
+const VOICES = {
+  Valentina: 'j7e3J6ksqsziQcIGyAWI',
+  Mario:     'tomkxGQGz4b1kE0EM722',
+  Alberto:   'l1zE9xgNpUTaQCZzpNJa',
+  Sandra:    'rEVYTKPqwSMhytFPayIb',
+  Carolina:  'cIBxLwfshLYhRB9lCXEg',
+  // fallbacks pelos nomes originais do JSON
+  Alejandro: 'l1zE9xgNpUTaQCZzpNJa',
+  Lizy:      'rEVYTKPqwSMhytFPayIb',
+  Lina:      'j7e3J6ksqsziQcIGyAWI',
+  Mikel:     'tomkxGQGz4b1kE0EM722',
+  Eleguar:   'tomkxGQGz4b1kE0EM722',
+};
+
+// Resolve voice_id — usa o do JSON se for válido, senão mapeia pelo nome
+function resolveVoice(personaje) {
+  if (personaje.voice_id && Object.values(VOICES).includes(personaje.voice_id)) {
+    return personaje.voice_id;
+  }
+  return VOICES[personaje.nombre] || VOICES.Valentina;
+}
 
 // ─────────────────────────────────────────────
 // CARGA DOS EXERCÍCIOS
-// Lê os JSONs de dados ao iniciar e faz cache
 // ─────────────────────────────────────────────
 let exercisesCache = null;
 
 function loadExercises() {
   if (exercisesCache) return exercisesCache;
-
   const dataDir = path.join(__dirname, '../data');
   const files = [
     'contenido-20-ejercicios-A1.json',
     'contenido-100-ejercicios-A2-C2.json'
   ];
-
   const merged = {};
-
   for (const filename of files) {
     const filepath = path.join(dataDir, filename);
-    if (!fs.existsSync(filepath)) {
-      console.warn(`[EXAM-AUDIO] Arquivo não encontrado: ${filename}`);
-      continue;
-    }
+    if (!fs.existsSync(filepath)) continue;
     try {
       const data = JSON.parse(fs.readFileSync(filepath, 'utf8'));
-      if (data.ejercicios) {
-        Object.assign(merged, data.ejercicios);
-        console.log(`[EXAM-AUDIO] ✅ Carregado: ${filename}`);
-      }
+      if (data.ejercicios) Object.assign(merged, data.ejercicios);
     } catch (err) {
       console.error(`[EXAM-AUDIO] Erro ao carregar ${filename}:`, err.message);
     }
   }
-
   exercisesCache = merged;
-  return exercisesCache;
+  return merged;
 }
 
-// Converte o mapa de exercícios num array plano
 function getAllExercises() {
   const data = loadExercises();
   const all = [];
   for (const exercises of Object.values(data)) {
-    if (Array.isArray(exercises)) {
-      all.push(...exercises);
-    }
+    if (Array.isArray(exercises)) all.push(...exercises);
   }
   return all;
 }
 
-// Verifica se o MP3 existe para um exercício
-function hasAudio(exerciseId) {
-  const safeId = exerciseId.replace(/[^a-zA-Z0-9_-]/g, '');
-  const audioPath = path.join(__dirname, `../public/audios/${safeId}.mp3`);
-  return fs.existsSync(audioPath);
+function findExercise(id) {
+  return getAllExercises().find(e => e.id === id.replace(/[^a-zA-Z0-9_-]/g, ''));
+}
+
+// ─────────────────────────────────────────────
+// GERAÇÃO DE ÁUDIO com ElevenLabs
+// Sem voice_settings = usa configurações nativas da voz
+// ─────────────────────────────────────────────
+async function generateAudio(text, voiceId) {
+  const response = await axios.post(
+    `${ELEVENLABS_BASE}/text-to-speech/${voiceId}`,
+    {
+      text,
+      model_id: 'eleven_multilingual_v2'
+    },
+    {
+      headers: {
+        'Accept': 'audio/mpeg',
+        'xi-api-key': ELEVENLABS_API_KEY,
+        'Content-Type': 'application/json'
+      },
+      responseType: 'arraybuffer',
+      timeout: 30000
+    }
+  );
+  return Buffer.from(response.data);
+}
+
+// Concatena buffers MP3 simples (sem silêncio entre linhas por ora)
+function concatBuffers(buffers) {
+  return Buffer.concat(buffers);
 }
 
 // ─────────────────────────────────────────────
 // GET /api/exam-audio/list
-// Query params: level, exam, has_audio
 // ─────────────────────────────────────────────
-router.get('/list', (req, res) => {
-  const { level, exam, has_audio } = req.query;
-
+router.get('/list', authMiddleware, (req, res) => {
+  const { level, exam } = req.query;
   let exercises = getAllExercises().map(ex => ({
     id: ex.id,
     titulo: ex.titulo,
     nivel: ex.nivel,
     examen: ex.examen,
-    tipo: ex.tipo,
-    duracion_segundos: ex.duracion_segundos,
     num_personajes: ex.personajes?.length || 0,
     num_lineas: ex.lineas?.length || 0,
-    has_audio: hasAudio(ex.id)
   }));
-
-  // Filtros opcionais
-  if (level) {
-    exercises = exercises.filter(e =>
-      e.nivel.toUpperCase() === level.toUpperCase()
-    );
-  }
-  if (exam) {
-    exercises = exercises.filter(e =>
-      e.examen.toUpperCase() === exam.toUpperCase()
-    );
-  }
-  if (has_audio === 'true') {
-    exercises = exercises.filter(e => e.has_audio);
-  }
-  if (has_audio === 'false') {
-    exercises = exercises.filter(e => !e.has_audio);
-  }
-
-  res.json({
-    total: exercises.length,
-    exercises
-  });
-});
-
-// ─────────────────────────────────────────────
-// GET /api/exam-audio/stats
-// Resumo por nível e exame
-// ─────────────────────────────────────────────
-router.get('/stats', (req, res) => {
-  const exercises = getAllExercises();
-  const stats = {};
-
-  for (const ex of exercises) {
-    const key = `${ex.examen}_${ex.nivel}`;
-    if (!stats[key]) {
-      stats[key] = {
-        examen: ex.examen,
-        nivel: ex.nivel,
-        total: 0,
-        with_audio: 0,
-        without_audio: 0
-      };
-    }
-    stats[key].total++;
-    if (hasAudio(ex.id)) {
-      stats[key].with_audio++;
-    } else {
-      stats[key].without_audio++;
-    }
-  }
-
-  const summary = Object.values(stats).sort((a, b) => {
-    const levelOrder = { A1: 1, A2: 2, B1: 3, B2: 4, C1: 5, C2: 6 };
-    return (levelOrder[a.nivel] || 0) - (levelOrder[b.nivel] || 0);
-  });
-
-  res.json({
-    total_exercises: exercises.length,
-    total_with_audio: exercises.filter(e => hasAudio(e.id)).length,
-    by_level: summary
-  });
+  if (level) exercises = exercises.filter(e => e.nivel.toUpperCase() === level.toUpperCase());
+  if (exam) exercises = exercises.filter(e => e.examen.toUpperCase() === exam.toUpperCase());
+  res.json({ total: exercises.length, exercises });
 });
 
 // ─────────────────────────────────────────────
 // GET /api/exam-audio/:id
-// Retorna metadados completos de um exercício
 // ─────────────────────────────────────────────
-router.get('/:id', (req, res) => {
-  const { id } = req.params;
+router.get('/:id', authMiddleware, (req, res) => {
+  const exercise = findExercise(req.params.id);
+  if (!exercise) return res.status(404).json({ error: 'Exercício não encontrado.' });
 
-  // Sanitiza o ID para segurança
-  const safeId = id.replace(/[^a-zA-Z0-9_-]/g, '');
-  if (!safeId) {
-    return res.status(400).json({ error: 'ID inválido.' });
-  }
-
-  const exercise = getAllExercises().find(e => e.id === safeId);
-
-  if (!exercise) {
-    return res.status(404).json({
-      error: `Exercício '${safeId}' não encontrado.`
-    });
-  }
-
-  const audioExists = hasAudio(safeId);
-
+  // Verifica se o áudio completo já está em cache
+  const cacheFile = path.join(EXAM_CACHE_DIR, `${exercise.id}_full.mp3`);
   res.json({
     ...exercise,
-    audio_available: audioExists,
-    audio_url: audioExists ? `/audios/${safeId}.mp3` : null
+    audio_cached: fs.existsSync(cacheFile),
+    audio_url: `/api/exam-audio/${exercise.id}/audio`
   });
 });
 
 // ─────────────────────────────────────────────
 // GET /api/exam-audio/:id/audio
-// Serve o arquivo MP3 diretamente
+// Gera diálogo completo — cacheia em disco
 // ─────────────────────────────────────────────
-router.get('/:id/audio', (req, res) => {
-  const { id } = req.params;
+router.get('/:id/audio', authMiddleware, async (req, res) => {
+  const exercise = findExercise(req.params.id);
+  if (!exercise) return res.status(404).json({ error: 'Exercício não encontrado.' });
 
-  // Sanitiza para evitar path traversal
-  const safeId = id.replace(/[^a-zA-Z0-9_-]/g, '');
-  if (!safeId) {
-    return res.status(400).json({ error: 'ID inválido.' });
+  const cacheFile = path.join(EXAM_CACHE_DIR, `${exercise.id}_full.mp3`);
+
+  // Serve do cache se existir
+  if (fs.existsSync(cacheFile)) {
+    console.log(`[EXAM-AUDIO] Cache HIT — ${exercise.id}`);
+    res.set('Content-Type', 'audio/mpeg');
+    res.set('Cache-Control', 'public, max-age=86400');
+    return res.sendFile(cacheFile);
   }
 
-  const audioPath = path.join(__dirname, `../public/audios/${safeId}.mp3`);
+  // Gera linha por linha e concatena
+  try {
+    console.log(`[EXAM-AUDIO] Gerando diálogo — ${exercise.id} (${exercise.lineas?.length || 0} linhas)`);
 
-  if (!fs.existsSync(audioPath)) {
-    return res.status(404).json({
-      error: `Áudio para '${safeId}' não encontrado. Execute o gerador de diálogos primeiro.`
+    const personajesMap = {};
+    (exercise.personajes || []).forEach(p => {
+      personajesMap[p.nombre] = resolveVoice(p);
     });
-  }
 
-  res.set('Content-Type', 'audio/mpeg');
-  res.set('Cache-Control', 'public, max-age=86400'); // cache 24h no browser
-  res.sendFile(audioPath);
+    const buffers = [];
+    for (const linea of (exercise.lineas || [])) {
+      const voiceId = personajesMap[linea.personaje] || VOICES.Valentina;
+      const text = linea.texto;
+      console.log(`[EXAM-AUDIO]   ${linea.personaje}: "${text.substring(0,40)}..."`);
+      const buf = await generateAudio(text, voiceId);
+      buffers.push(buf);
+      // Pequena pausa entre falas (250ms de silêncio aproximado)
+      await new Promise(r => setTimeout(r, 200));
+    }
+
+    const fullAudio = concatBuffers(buffers);
+    fs.writeFileSync(cacheFile, fullAudio);
+    console.log(`[EXAM-AUDIO] ✅ Salvo ${fullAudio.length} bytes — ${exercise.id}_full.mp3`);
+
+    res.set('Content-Type', 'audio/mpeg');
+    res.set('Content-Length', fullAudio.length);
+    res.set('Cache-Control', 'public, max-age=86400');
+    res.send(fullAudio);
+
+  } catch (err) {
+    const status = err.response?.status;
+    console.error(`[EXAM-AUDIO] Erro (${status}):`, err.message);
+    if (status === 429) return res.status(429).json({ error: 'Limite de áudio atingido.' });
+    res.status(500).json({ error: 'Erro ao gerar áudio do diálogo.' });
+  }
 });
 
-// Invalida o cache de exercícios (útil ao adicionar novos JSONs)
-router.post('/reload', (req, res) => {
-  exercisesCache = null;
-  const count = getAllExercises().length;
-  res.json({
-    success: true,
-    message: `Cache recarregado. ${count} exercícios disponíveis.`
-  });
+// ─────────────────────────────────────────────
+// GET /api/exam-audio/:id/line/:n
+// Gera áudio de uma linha específica (0-indexed)
+// ─────────────────────────────────────────────
+router.get('/:id/line/:n', authMiddleware, async (req, res) => {
+  const exercise = findExercise(req.params.id);
+  if (!exercise) return res.status(404).json({ error: 'Exercício não encontrado.' });
+
+  const n = parseInt(req.params.n);
+  const linea = exercise.lineas?.[n];
+  if (!linea) return res.status(404).json({ error: 'Linha não encontrada.' });
+
+  const cacheFile = path.join(EXAM_CACHE_DIR, `${exercise.id}_line${n}.mp3`);
+
+  if (fs.existsSync(cacheFile)) {
+    res.set('Content-Type', 'audio/mpeg');
+    res.set('Cache-Control', 'public, max-age=86400');
+    return res.sendFile(cacheFile);
+  }
+
+  try {
+    const personajesMap = {};
+    (exercise.personajes || []).forEach(p => {
+      personajesMap[p.nombre] = resolveVoice(p);
+    });
+
+    const voiceId = personajesMap[linea.personaje] || VOICES.Valentina;
+    const buf = await generateAudio(linea.texto, voiceId);
+    fs.writeFileSync(cacheFile, buf);
+
+    res.set('Content-Type', 'audio/mpeg');
+    res.set('Content-Length', buf.length);
+    res.set('Cache-Control', 'public, max-age=86400');
+    res.send(buf);
+
+  } catch (err) {
+    res.status(500).json({ error: 'Erro ao gerar áudio da linha.' });
+  }
 });
 
 module.exports = router;
