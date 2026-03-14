@@ -118,12 +118,14 @@ async function validateHotmart(email) {
       console.log(`[LOGIN] Item ${i}:`, JSON.stringify(item));
     });
 
-    // Verifica se tem registro como BUYER (comprador) com transação válida
+    // Verifica se tem registro com BUYER no array users e transação válida
     const hasAccess = items.some(item => {
-      const role = (item.role || '').toUpperCase();
-      const hasTransaction = !!item.transaction;
-      console.log(`[LOGIN] role: "${role}", transaction: "${item.transaction || 'N/A'}"`);
-      return role === 'BUYER' && hasTransaction;
+      const hasBuyer = (item.users || []).some(u => 
+        (u.role || '').toUpperCase() === 'BUYER' &&
+        (u.user?.email || '').toLowerCase() === email.toLowerCase()
+      );
+      console.log(`[LOGIN] transaction: "${item.transaction || 'N/A'}", hasBuyer: ${hasBuyer}`);
+      return hasBuyer && !!item.transaction;
     });
 
     setCache(email, hasAccess);
