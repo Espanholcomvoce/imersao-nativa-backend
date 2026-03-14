@@ -1,10 +1,6 @@
 /**
  * IMERSÃO NATIVA - Conversa em Tempo Real
- * Ephemeral Token → Frontend conecta direto na OpenAI via WebRTC
- *
- * GET  /api/realtime/status  → minutos restantes
- * POST /api/realtime/token   → gera ephemeral token
- * POST /api/realtime/end     → registra fim da sessão
+ * Ephemeral Token → WebRTC direto na OpenAI
  */
 
 const express = require('express');
@@ -42,7 +38,6 @@ function auth(req, res, next) {
   catch { res.status(401).json({ error: 'Token inválido.' }); }
 }
 
-// GET /api/realtime/status
 router.get('/status', auth, (req, res) => {
   const remaining = getRemainingSeconds(req.user.email);
   const u = getUsage(req.user.email);
@@ -55,7 +50,6 @@ router.get('/status', auth, (req, res) => {
   });
 });
 
-// POST /api/realtime/token
 router.post('/token', auth, async (req, res) => {
   const email = req.user.email;
   const remaining = getRemainingSeconds(email);
@@ -63,31 +57,64 @@ router.post('/token', auth, async (req, res) => {
 
   const { level, situation } = req.body || {};
 
-  const sitMap = { café:'num café', hotel:'num hotel', trabajo:'no trabalho', médico:'no médico', viaje:'numa viagem', mercado:'no mercado', amigos:'com amigos', libre:'sobre qualquer assunto' };
-  const lvlMap = { beginner:'iniciante (A1-A2) — use vocabulário simples e fale devagar', intermediate:'intermediário (B1-B2)', advanced:'avançado (C1-C2) — use vocabulário rico' };
+  const sitMap = {
+    café: 'num café',
+    hotel: 'num hotel',
+    trabajo: 'no trabalho',
+    médico: 'no médico',
+    viaje: 'numa viagem',
+    mercado: 'no mercado',
+    amigos: 'com amigos',
+    libre: 'sobre qualquer assunto livre'
+  };
 
-  const instructions = `Eres Paula, profesora de español para brasileños. Conversación ${sitMap[situation]||'libre'}. Nivel del alumno: ${lvlMap[level]||'intermediário'}.
+  const lvlMap = {
+    beginner: 'iniciante (A1-A2): fala devagar, usa vocabulário básico, frases curtas',
+    intermediate: 'intermediário (B1-B2): ritmo normal, vocabulário cotidiano',
+    advanced: 'avançado (C1-C2): ritmo natural, vocabulário rico, expressões idiomáticas'
+  };
 
-REGLAS:
-- Habla siempre en español, respuestas cortas (2-3 frases máximo)
-- Entiende portugués pero responde siempre en español
-- Corrige errores suavemente integrados: si dice "eu fui" → tú dices "¡Ah, *yo fui*! ¿Y qué pasó?"
-- Siempre termina con una pregunta para mantener la conversación
-- Tono cercano y motivador, como una amiga que es profesora
-- Empieza presentándote brevemente y haciendo una pregunta sobre la situación`;
+  const instructions = `Eres Paula, profesora brasileira de español, joven y simpática.
+
+SITUACIÓN: Estás conversando ${sitMap[situation] || 'libremente'} con un alumno de nivel ${lvlMap[level] || 'intermediario'}.
+
+TU FORMA DE SER:
+- Hablas siempre en español, con naturalidad y calidez
+- Cuando el alumno habla en portugués, lo entiendes pero respondes en español — y repites lo que dijo correctamente en español de forma natural, sin señalar el error explícitamente. Ejemplo: si dice "eu fui ao mercado", tú dices "¡Ah, fuiste al mercado! ¿Y qué compraste?"
+- Corriges errores gramaticales de la misma forma: incorporas la versión correcta en tu respuesta sin decir "error" ni "incorrecto"
+- Eres como una amiga que también es profesora — cercana, motivadora, genuinamente curiosa por la vida del alumno
+- Cada respuesta termina con una pregunta para mantener la conversación viva
+- Si el alumno dice poco, anímalo: "¡Cuéntame más!" o "¿Y cómo te sentiste?"
+- Celebra el progreso de forma natural: "¡Qué bien lo dijiste!" o "¡Mira cómo vas mejorando!"
+
+RITMO:
+- Respuestas cortas y conversacionales (máximo 3 frases)
+- Habla a un ritmo cómodo, sin apresurarte
+- Usa pausas naturales — no cortes al alumno
+
+INICIO: Preséntate con entusiasmo y haz una pregunta sobre la situación para arrancar la conversación.`;
 
   try {
     const r = await fetch('https://api.openai.com/v1/realtime/sessions', {
       method: 'POST',
-      headers: { 'Authorization': `Bearer ${OPENAI_API_KEY}`, 'Content-Type': 'application/json' },
+      headers: {
+        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
       body: JSON.stringify({
         model: 'gpt-4o-realtime-preview-2024-12-17',
         voice: 'shimmer',
         instructions,
         input_audio_transcription: { model: 'whisper-1' },
-        turn_detection: { type: 'server_vad', threshold: 0.5, prefix_padding_ms: 300, silence_duration_ms: 700 },
-        temperature: 0.85,
-        max_response_output_tokens: 200
+        turn_detection: {
+          type: 'server_vad',
+          threshold: 0.6,        // mais alto = menos sensível a ruído
+          prefix_padding_ms: 500, // espera mais antes de começar a gravar
+          silence_duration_ms: 1200, // espera mais silêncio antes de cortar — evita cortes
+          create_response: true
+        },
+        temperature: 0.9,
+        max_response_output_tokens: 250
       })
     });
 
@@ -102,16 +129,15 @@ REGLAS:
     u.sessionStart = Date.now();
     usageMap.set(email, u);
 
-    console.log(`[REALTIME] Token gerado: ${email} | Restam ${Math.floor(remaining/60)}min`);
+    console.log(`[REALTIME] Token gerado: ${email} | Restam ${Math.floor(remaining / 60)}min`);
     res.json({ client_secret: session.client_secret, remaining_seconds: remaining });
 
-  } catch(err) {
+  } catch (err) {
     console.error('[REALTIME]', err.message);
     res.status(500).json({ error: 'Erro interno.' });
   }
 });
 
-// POST /api/realtime/end
 router.post('/end', auth, (req, res) => {
   const email = req.user.email;
   const u = getUsage(email);
@@ -119,13 +145,13 @@ router.post('/end', auth, (req, res) => {
     u.seconds += Math.floor((Date.now() - u.sessionStart) / 1000);
     u.sessionStart = null;
     usageMap.set(email, u);
-    console.log(`[REALTIME] Encerrado: ${email} | Total: ${u.seconds}s`);
+    console.log(`[REALTIME] Encerrado: ${email} | Total hoje: ${u.seconds}s`);
   }
   res.json({ ok: true });
 });
 
 function setupRealtimeWebSocket(httpServer) {
-  console.log('ℹ️  Realtime via ephemeral token (WebRTC direto)');
+  console.log('ℹ️  Realtime via ephemeral token (WebRTC)');
 }
 
 module.exports = router;
