@@ -1,0 +1,914 @@
+{
+  "version": "1.0",
+  "fecha_creacion": "2026-03-10",
+  "total_ejercicios": 20,
+  "descripcion": "20 ejercicios profesionales nivel A1 (10 DELE + 10 SIELE) con múltiples voces",
+  
+  "voces_disponibles": {
+    "Valentina": {
+      "voice_id": "Valentina",
+      "idioma": "Español mexicano",
+      "genero": "mujer",
+      "edad": "joven",
+      "descripcion": "Cálida, natural, perfecta para conversaciones"
+    },
+    "Alejandro": {
+      "voice_id": "pqHfZKP75CvOlQylNhV4",
+      "idioma": "Español mexicano",
+      "genero": "hombre",
+      "edad": "joven-adulto",
+      "descripcion": "Neutral, profesional, clara dicción"
+    },
+    "Lizy": {
+      "voice_id": "Lizy",
+      "idioma": "Español colombiano",
+      "genero": "mujer",
+      "edad": "adulta",
+      "descripcion": "Profesional, clara, autoridad"
+    },
+    "Mikel": {
+      "voice_id": "Mikel",
+      "idioma": "Español (España)",
+      "genero": "hombre",
+      "edad": "adulto",
+      "descripcion": "Maduro, formal, distintivo"
+    }
+  },
+
+  "ejercicios": {
+    "DELE_A1": [
+      {
+        "id": "DELE_A1_01",
+        "titulo": "Presentaciones en clase",
+        "nivel": "A1",
+        "examen": "DELE",
+        "tipo": "dialogo",
+        "duracion_segundos": 30,
+        "formato_oficial": "DELE A1 - Tarea 1: Diálogo breve cotidiano - Presentación personal",
+        "contexto": "Dos estudiantes se presentan en el primer día de clase",
+        "personajes": [
+          {
+            "id": "p1",
+            "nombre": "María",
+            "voz": "Valentina",
+            "voice_id": "Valentina",
+            "genero": "mujer",
+            "rol": "Estudiante nueva"
+          },
+          {
+            "id": "p2",
+            "nombre": "Carlos",
+            "voz": "Alejandro",
+            "voice_id": "pqHfZKP75CvOlQylNhV4",
+            "genero": "hombre",
+            "rol": "Estudiante"
+          }
+        ],
+        "lineas": [
+          {"personaje": "p1", "texto": "Hola, me llamo María. ¿Y tú?", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p2", "texto": "Yo soy Carlos. Mucho gusto.", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p1", "texto": "¿De dónde eres, Carlos?", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p2", "texto": "Soy de México. ¿Y tú?", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p1", "texto": "Yo soy de Madrid.", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p2", "texto": "¿Vives aquí en Barcelona?", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p1", "texto": "Sí, vivo cerca de la plaza.", "pausa_antes": 0, "pausa_despues": 1.0}
+        ],
+        "preguntas": [
+          "1. ¿Cómo se llama la mujer?",
+          "2. ¿De dónde es Carlos?",
+          "3. ¿Dónde vive María?"
+        ],
+        "respuestas_correctas": ["María", "De México / México", "En Barcelona, cerca de la plaza"],
+        "vocabulario_clave": ["nombre", "ser de", "vivir", "plaza"],
+        "estructuras_gramaticales": ["Presente de indicativo", "Ser/Estar", "Interrogativos"]
+      },
+      {
+        "id": "DELE_A1_02",
+        "titulo": "En la tienda de ropa",
+        "nivel": "A1",
+        "examen": "DELE",
+        "tipo": "dialogo",
+        "duracion_segundos": 28,
+        "formato_oficial": "DELE A1 - Tarea 1: Compras cotidianas - Transacción simple",
+        "contexto": "Cliente compra una camiseta en una tienda",
+        "personajes": [
+          {
+            "id": "p1",
+            "nombre": "Vendedora",
+            "voz": "Valentina",
+            "voice_id": "Valentina",
+            "genero": "mujer",
+            "rol": "Dependienta de tienda"
+          },
+          {
+            "id": "p2",
+            "nombre": "Cliente",
+            "voz": "Alejandro",
+            "voice_id": "pqHfZKP75CvOlQylNhV4",
+            "genero": "hombre",
+            "rol": "Comprador"
+          }
+        ],
+        "lineas": [
+          {"personaje": "p1", "texto": "Buenos días, ¿qué desea?", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p2", "texto": "Quiero una camiseta, por favor.", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p1", "texto": "¿De qué color?", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p2", "texto": "Azul.", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p1", "texto": "Tenemos esta. Cuesta quince euros.", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p2", "texto": "Perfecto, la llevo.", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p1", "texto": "¿Paga con tarjeta?", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p2", "texto": "No, en efectivo.", "pausa_antes": 0, "pausa_despues": 1.0}
+        ],
+        "preguntas": [
+          "1. ¿Qué compra el cliente?",
+          "2. ¿De qué color es?",
+          "3. ¿Cuánto cuesta?"
+        ],
+        "respuestas_correctas": ["Una camiseta", "Azul", "15 euros / Quince euros"],
+        "vocabulario_clave": ["camiseta", "color", "euros", "tarjeta", "efectivo"],
+        "estructuras_gramaticales": ["Presente de indicativo", "Números 1-100", "Querer + infinitivo"]
+      },
+      {
+        "id": "DELE_A1_03",
+        "titulo": "En el restaurante",
+        "nivel": "A1",
+        "examen": "DELE",
+        "tipo": "dialogo",
+        "duracion_segundos": 25,
+        "formato_oficial": "DELE A1 - Tarea 2: Pedir en restaurante",
+        "contexto": "Cliente pide comida en un restaurante",
+        "personajes": [
+          {
+            "id": "p1",
+            "nombre": "Camarero",
+            "voz": "Alejandro",
+            "voice_id": "pqHfZKP75CvOlQylNhV4",
+            "genero": "hombre",
+            "rol": "Mesero"
+          },
+          {
+            "id": "p2",
+            "nombre": "Cliente",
+            "voz": "Valentina",
+            "voice_id": "Valentina",
+            "genero": "mujer",
+            "rol": "Comensal"
+          }
+        ],
+        "lineas": [
+          {"personaje": "p1", "texto": "Buenas tardes. ¿Qué va a tomar?", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p2", "texto": "Una ensalada y agua, por favor.", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p1", "texto": "¿Algo más?", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p2", "texto": "No, gracias.", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p1", "texto": "Muy bien. Enseguida se lo traigo.", "pausa_antes": 0, "pausa_despues": 1.0}
+        ],
+        "preguntas": [
+          "1. ¿Qué pide de comer?",
+          "2. ¿Qué pide de beber?",
+          "3. ¿Pide algo más?"
+        ],
+        "respuestas_correctas": ["Una ensalada / Ensalada", "Agua", "No"],
+        "vocabulario_clave": ["ensalada", "agua", "tomar", "traer"],
+        "estructuras_gramaticales": ["Ir a + infinitivo", "Pronombres de objeto directo"]
+      },
+      {
+        "id": "DELE_A1_04",
+        "titulo": "Preguntando la hora",
+        "nivel": "A1",
+        "examen": "DELE",
+        "tipo": "dialogo",
+        "duracion_segundos": 22,
+        "formato_oficial": "DELE A1 - Tarea 1: Información básica - La hora",
+        "contexto": "Persona pregunta la hora por la calle",
+        "personajes": [
+          {
+            "id": "p1",
+            "nombre": "Hombre",
+            "voz": "Alejandro",
+            "voice_id": "pqHfZKP75CvOlQylNhV4",
+            "genero": "hombre",
+            "rol": "Transeúnte"
+          },
+          {
+            "id": "p2",
+            "nombre": "Mujer",
+            "voz": "Valentina",
+            "voice_id": "Valentina",
+            "genero": "mujer",
+            "rol": "Transeúnte"
+          }
+        ],
+        "lineas": [
+          {"personaje": "p1", "texto": "Disculpa, ¿qué hora es?", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p2", "texto": "Son las tres y media.", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p1", "texto": "¿Estás segura?", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p2", "texto": "Sí, mira mi reloj.", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p1", "texto": "Ah, gracias. Llego tarde.", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p2", "texto": "De nada.", "pausa_antes": 0, "pausa_despues": 1.0}
+        ],
+        "preguntas": [
+          "1. ¿Qué hora es?",
+          "2. ¿Cómo lo sabe la mujer?",
+          "3. ¿El hombre llega tarde?"
+        ],
+        "respuestas_correctas": ["Las tres y media / 3:30", "Por su reloj / Mira su reloj", "Sí"],
+        "vocabulario_clave": ["hora", "reloj", "tarde", "segura"],
+        "estructuras_gramaticales": ["La hora", "Presente de indicativo", "Llegar + tarde"]
+      },
+      {
+        "id": "DELE_A1_05",
+        "titulo": "En el autobús",
+        "nivel": "A1",
+        "examen": "DELE",
+        "tipo": "dialogo",
+        "duracion_segundos": 24,
+        "formato_oficial": "DELE A1 - Tarea 2: Transporte público",
+        "contexto": "Pasajero pregunta al conductor sobre el destino",
+        "personajes": [
+          {
+            "id": "p1",
+            "nombre": "Pasajero",
+            "voz": "Alejandro",
+            "voice_id": "pqHfZKP75CvOlQylNhV4",
+            "genero": "hombre",
+            "rol": "Viajero"
+          },
+          {
+            "id": "p2",
+            "nombre": "Conductor",
+            "voz": "Mikel",
+            "voice_id": "Mikel",
+            "genero": "hombre",
+            "rol": "Chofer de autobús"
+          }
+        ],
+        "lineas": [
+          {"personaje": "p1", "texto": "Perdone, ¿este autobús va al centro?", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p2", "texto": "Sí, señor.", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p1", "texto": "¿Cuánto cuesta el billete?", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p2", "texto": "Un euro cincuenta.", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p1", "texto": "Aquí tiene.", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p2", "texto": "Gracias.", "pausa_antes": 0, "pausa_despues": 1.0}
+        ],
+        "preguntas": [
+          "1. ¿Adónde va el autobús?",
+          "2. ¿Cuánto cuesta el billete?",
+          "3. ¿Cómo paga el pasajero?"
+        ],
+        "respuestas_correctas": ["Al centro", "1,50 euros / Un euro cincuenta", "En efectivo / Le da el dinero"],
+        "vocabulario_clave": ["autobús", "centro", "billete", "euro"],
+        "estructuras_gramaticales": ["Ir a + lugar", "Números decimales", "Presente de indicativo"]
+      },
+      {
+        "id": "DELE_A1_06",
+        "titulo": "Hablando de familia",
+        "nivel": "A1",
+        "examen": "DELE",
+        "tipo": "dialogo",
+        "duracion_segundos": 26,
+        "formato_oficial": "DELE A1 - Tarea 1: La familia",
+        "contexto": "Niña pregunta por su familia",
+        "personajes": [
+          {
+            "id": "p1",
+            "nombre": "Niña",
+            "voz": "Valentina",
+            "voice_id": "Valentina",
+            "genero": "mujer",
+            "rol": "Hija"
+          },
+          {
+            "id": "p2",
+            "nombre": "Madre",
+            "voz": "Lizy",
+            "voice_id": "Lizy",
+            "genero": "mujer",
+            "rol": "Mamá"
+          }
+        ],
+        "lineas": [
+          {"personaje": "p1", "texto": "Mamá, ¿dónde está mi hermano?", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p2", "texto": "Juan está en su cuarto.", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p1", "texto": "¿Y papá?", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p2", "texto": "Papá está trabajando.", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p1", "texto": "¿A qué hora vuelve?", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p2", "texto": "A las seis de la tarde.", "pausa_antes": 0, "pausa_despues": 1.0}
+        ],
+        "preguntas": [
+          "1. ¿Dónde está Juan?",
+          "2. ¿Qué hace el padre?",
+          "3. ¿A qué hora vuelve?"
+        ],
+        "respuestas_correctas": ["En su cuarto", "Está trabajando / Trabaja", "A las seis / 6:00"],
+        "vocabulario_clave": ["hermano", "cuarto", "trabajar", "volver"],
+        "estructuras_gramaticales": ["Estar + gerundio", "Preposición en", "La hora"]
+      },
+      {
+        "id": "DELE_A1_07",
+        "titulo": "Reserva de hotel",
+        "nivel": "A1",
+        "examen": "DELE",
+        "tipo": "dialogo",
+        "duracion_segundos": 28,
+        "formato_oficial": "DELE A1 - Tarea 2: Servicios - Hotel",
+        "contexto": "Cliente hace reserva telefónica en hotel",
+        "personajes": [
+          {
+            "id": "p1",
+            "nombre": "Recepcionista",
+            "voz": "Valentina",
+            "voice_id": "Valentina",
+            "genero": "mujer",
+            "rol": "Empleada de hotel"
+          },
+          {
+            "id": "p2",
+            "nombre": "Cliente",
+            "voz": "Alejandro",
+            "voice_id": "pqHfZKP75CvOlQylNhV4",
+            "genero": "hombre",
+            "rol": "Huésped"
+          }
+        ],
+        "lineas": [
+          {"personaje": "p1", "texto": "Hotel Sol, buenos días.", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p2", "texto": "Hola, quiero hacer una reserva.", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p1", "texto": "¿Para cuántas personas?", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p2", "texto": "Para dos personas.", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p1", "texto": "¿Su número de teléfono?", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p2", "texto": "Seis, siete, ocho, nueve, cero, uno, dos.", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p1", "texto": "Perfecto, gracias.", "pausa_antes": 0, "pausa_despues": 1.0}
+        ],
+        "preguntas": [
+          "1. ¿Dónde llama?",
+          "2. ¿Para cuántas personas es la reserva?",
+          "3. ¿Da su número de teléfono?"
+        ],
+        "respuestas_correctas": ["Hotel Sol / Al hotel", "Dos personas / 2", "Sí"],
+        "vocabulario_clave": ["hotel", "reserva", "personas", "teléfono"],
+        "estructuras_gramaticales": ["Querer + infinitivo", "Números 0-9", "Para + cantidad"]
+      },
+      {
+        "id": "DELE_A1_08",
+        "titulo": "Tiempo libre",
+        "nivel": "A1",
+        "examen": "DELE",
+        "tipo": "dialogo",
+        "duracion_segundos": 25,
+        "formato_oficial": "DELE A1 - Tarea 1: Actividades de ocio",
+        "contexto": "Dos amigos hablan sobre sus aficiones",
+        "personajes": [
+          {
+            "id": "p1",
+            "nombre": "María",
+            "voz": "Valentina",
+            "voice_id": "Valentina",
+            "genero": "mujer",
+            "rol": "Amiga"
+          },
+          {
+            "id": "p2",
+            "nombre": "Pedro",
+            "voz": "Alejandro",
+            "voice_id": "pqHfZKP75CvOlQylNhV4",
+            "genero": "hombre",
+            "rol": "Amigo"
+          }
+        ],
+        "lineas": [
+          {"personaje": "p1", "texto": "¿Qué haces los fines de semana?", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p2", "texto": "Voy al cine con mis amigos.", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p1", "texto": "¿Te gusta el cine?", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p2", "texto": "Sí, mucho. ¿Y tú?", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p1", "texto": "Yo prefiero leer libros.", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p2", "texto": "Ah, qué interesante.", "pausa_antes": 0, "pausa_despues": 1.0}
+        ],
+        "preguntas": [
+          "1. ¿Qué hace Pedro los fines de semana?",
+          "2. ¿Con quién va al cine?",
+          "3. ¿Qué prefiere María?"
+        ],
+        "respuestas_correctas": ["Va al cine", "Con sus amigos", "Leer libros / Leer"],
+        "vocabulario_clave": ["fin de semana", "cine", "amigos", "leer", "libros"],
+        "estructuras_gramaticales": ["Presente de indicativo", "Gustar", "Preferir"]
+      },
+      {
+        "id": "DELE_A1_09",
+        "titulo": "Descripción de personas",
+        "nivel": "A1",
+        "examen": "DELE",
+        "tipo": "dialogo",
+        "duracion_segundos": 24,
+        "formato_oficial": "DELE A1 - Tarea 3: Descripciones físicas",
+        "contexto": "Persona describe a un familiar",
+        "personajes": [
+          {
+            "id": "p1",
+            "nombre": "Ana",
+            "voz": "Valentina",
+            "voice_id": "Valentina",
+            "genero": "mujer",
+            "rol": "Amiga"
+          },
+          {
+            "id": "p2",
+            "nombre": "Luis",
+            "voz": "Alejandro",
+            "voice_id": "pqHfZKP75CvOlQylNhV4",
+            "genero": "hombre",
+            "rol": "Amigo"
+          }
+        ],
+        "lineas": [
+          {"personaje": "p1", "texto": "¿Cómo es tu hermana?", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p2", "texto": "Es alta y morena.", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p1", "texto": "¿Tiene el pelo largo?", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p2", "texto": "No, lo tiene corto.", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p1", "texto": "¿De qué color son sus ojos?", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p2", "texto": "Tiene los ojos marrones.", "pausa_antes": 0, "pausa_despues": 1.0}
+        ],
+        "preguntas": [
+          "1. ¿Cómo es la hermana de Luis?",
+          "2. ¿Cómo tiene el pelo?",
+          "3. ¿De qué color son sus ojos?"
+        ],
+        "respuestas_correctas": ["Alta y morena", "Corto", "Marrones"],
+        "vocabulario_clave": ["alto", "morena", "pelo", "ojos", "color"],
+        "estructuras_gramaticales": ["Ser + adjetivo", "Tener + sustantivo", "Pronombres posesivos"]
+      },
+      {
+        "id": "DELE_A1_10",
+        "titulo": "El pronóstico del tiempo",
+        "nivel": "A1",
+        "examen": "DELE",
+        "tipo": "monologo",
+        "duracion_segundos": 20,
+        "formato_oficial": "DELE A1 - Tarea 4: Anuncio de radio - Meteorología",
+        "contexto": "Locutor da el pronóstico del tiempo",
+        "personajes": [
+          {
+            "id": "p1",
+            "nombre": "Locutor",
+            "voz": "Mikel",
+            "voice_id": "Mikel",
+            "genero": "hombre",
+            "rol": "Presentador de radio"
+          }
+        ],
+        "lineas": [
+          {"personaje": "p1", "texto": "El tiempo para hoy: en Madrid, sol y veinticinco grados. En Barcelona, nubes y veinte grados. En Sevilla, mucho calor, treinta y dos grados.", "pausa_antes": 0, "pausa_despues": 1.5}
+        ],
+        "preguntas": [
+          "1. ¿Qué tiempo hace en Madrid?",
+          "2. ¿Cuántos grados hay en Barcelona?",
+          "3. ¿Hace frío en Sevilla?"
+        ],
+        "respuestas_correctas": ["Sol / Hace sol", "20 grados / Veinte grados", "No / Hace calor"],
+        "vocabulario_clave": ["tiempo", "sol", "nubes", "grados", "calor"],
+        "estructuras_gramaticales": ["Hacer + tiempo", "Números 1-100", "Hay"]
+      }
+    ],
+
+    "SIELE_A1": [
+      {
+        "id": "SIELE_A1_01",
+        "titulo": "En el mercado",
+        "nivel": "A1",
+        "examen": "SIELE",
+        "tipo": "dialogo",
+        "duracion_segundos": 22,
+        "formato_oficial": "SIELE A1 - Tarea 1: Compras básicas",
+        "contexto": "Cliente compra frutas y verduras en el mercado",
+        "personajes": [
+          {
+            "id": "p1",
+            "nombre": "Vendedor",
+            "voz": "Alejandro",
+            "voice_id": "pqHfZKP75CvOlQylNhV4",
+            "genero": "hombre",
+            "rol": "Vendedor de mercado"
+          },
+          {
+            "id": "p2",
+            "nombre": "Cliente",
+            "voz": "Valentina",
+            "voice_id": "Valentina",
+            "genero": "mujer",
+            "rol": "Compradora"
+          }
+        ],
+        "lineas": [
+          {"personaje": "p1", "texto": "¡Buenos días! ¿Qué va a llevar?", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p2", "texto": "Quiero un kilo de tomates.", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p1", "texto": "¿Algo más?", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p2", "texto": "Sí, medio kilo de cebollas.", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p1", "texto": "Son cuatro euros en total.", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p2", "texto": "Aquí tiene.", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p1", "texto": "Gracias, que tenga buen día.", "pausa_antes": 0, "pausa_despues": 1.0}
+        ],
+        "preguntas": [
+          "1. ¿Dónde están?",
+          "2. ¿Qué compra primero?",
+          "3. ¿Cuánto paga en total?"
+        ],
+        "respuestas_correctas": ["En el mercado", "Un kilo de tomates / Tomates", "4 euros / Cuatro euros"],
+        "vocabulario_clave": ["mercado", "kilo", "tomates", "cebollas", "euros"],
+        "estructuras_gramaticales": ["Ir a + infinitivo", "Querer + sustantivo", "Cantidades"]
+      },
+      {
+        "id": "SIELE_A1_02",
+        "titulo": "Haciendo planes",
+        "nivel": "A1",
+        "examen": "SIELE",
+        "tipo": "dialogo",
+        "duracion_segundos": 28,
+        "formato_oficial": "SIELE A1 - Tarea 1: Planes sociales",
+        "contexto": "Dos amigos hacen planes para ir al cine",
+        "personajes": [
+          {
+            "id": "p1",
+            "nombre": "Ana",
+            "voz": "Valentina",
+            "voice_id": "Valentina",
+            "genero": "mujer",
+            "rol": "Amiga"
+          },
+          {
+            "id": "p2",
+            "nombre": "Luis",
+            "voz": "Alejandro",
+            "voice_id": "pqHfZKP75CvOlQylNhV4",
+            "genero": "hombre",
+            "rol": "Amigo"
+          }
+        ],
+        "lineas": [
+          {"personaje": "p1", "texto": "¿Quieres ir al cine esta tarde?", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p2", "texto": "No puedo, tengo que estudiar.", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p1", "texto": "¿Y mañana?", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p2", "texto": "Mañana sí puedo. ¿Qué película quieres ver?", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p1", "texto": "Hay una comedia nueva.", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p2", "texto": "Perfecto. ¿A qué hora quedamos?", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p1", "texto": "A las siete en la entrada.", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p2", "texto": "Vale, hasta mañana.", "pausa_antes": 0, "pausa_despues": 1.0}
+        ],
+        "preguntas": [
+          "1. ¿Qué propone Ana?",
+          "2. ¿Por qué Luis no puede hoy?",
+          "3. ¿A qué hora quedan?"
+        ],
+        "respuestas_correctas": ["Ir al cine", "Tiene que estudiar", "A las siete / 7:00"],
+        "vocabulario_clave": ["cine", "tarde", "estudiar", "película", "quedar"],
+        "estructuras_gramaticales": ["Querer + infinitivo", "Tener que + infinitivo", "Poder"]
+      },
+      {
+        "id": "SIELE_A1_03",
+        "titulo": "En el médico",
+        "nivel": "A1",
+        "examen": "SIELE",
+        "tipo": "dialogo",
+        "duracion_segundos": 26,
+        "formato_oficial": "SIELE A1 - Tarea 2: Consulta médica básica",
+        "contexto": "Paciente visita al doctor por dolor de garganta",
+        "personajes": [
+          {
+            "id": "p1",
+            "nombre": "Doctor",
+            "voz": "Mikel",
+            "voice_id": "Mikel",
+            "genero": "hombre",
+            "rol": "Médico"
+          },
+          {
+            "id": "p2",
+            "nombre": "Paciente",
+            "voz": "Valentina",
+            "voice_id": "Valentina",
+            "genero": "mujer",
+            "rol": "Enferma"
+          }
+        ],
+        "lineas": [
+          {"personaje": "p1", "texto": "¿Qué le pasa?", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p2", "texto": "Me duele mucho la garganta.", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p1", "texto": "¿Desde cuándo?", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p2", "texto": "Desde hace tres días.", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p1", "texto": "¿Tiene fiebre?", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p2", "texto": "Sí, un poco.", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p1", "texto": "Es una infección. Le receto antibióticos.", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p2", "texto": "¿Cuándo me sentiré mejor?", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p1", "texto": "En dos o tres días.", "pausa_antes": 0, "pausa_despues": 1.0}
+        ],
+        "preguntas": [
+          "1. ¿Cuál es el síntoma principal?",
+          "2. ¿Cuánto tiempo lleva enferma?",
+          "3. ¿Qué le receta el doctor?"
+        ],
+        "respuestas_correctas": ["Dolor de garganta / Le duele la garganta", "Tres días", "Antibióticos"],
+        "vocabulario_clave": ["doler", "garganta", "fiebre", "infección", "antibióticos"],
+        "estructuras_gramaticales": ["Doler (verbo gustar)", "Desde hace + tiempo", "Sentirse"]
+      },
+      {
+        "id": "SIELE_A1_04",
+        "titulo": "Pedir direcciones",
+        "nivel": "A1",
+        "examen": "SIELE",
+        "tipo": "dialogo",
+        "duracion_segundos": 24,
+        "formato_oficial": "SIELE A1 - Tarea 1: Orientación en la ciudad",
+        "contexto": "Turista pregunta cómo llegar a un lugar",
+        "personajes": [
+          {
+            "id": "p1",
+            "nombre": "Turista",
+            "voz": "Alejandro",
+            "voice_id": "pqHfZKP75CvOlQylNhV4",
+            "genero": "hombre",
+            "rol": "Visitante"
+          },
+          {
+            "id": "p2",
+            "nombre": "Residente",
+            "voz": "Lizy",
+            "voice_id": "Lizy",
+            "genero": "mujer",
+            "rol": "Habitante local"
+          }
+        ],
+        "lineas": [
+          {"personaje": "p1", "texto": "Disculpe, ¿dónde está la estación de metro?", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p2", "texto": "Está muy cerca, al final de esta calle.", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p1", "texto": "¿A la derecha o a la izquierda?", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p2", "texto": "A la derecha.", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p1", "texto": "¿Está lejos?", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p2", "texto": "No, a cinco minutos andando.", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p1", "texto": "Muchas gracias.", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p2", "texto": "De nada, buen viaje.", "pausa_antes": 0, "pausa_despues": 1.0}
+        ],
+        "preguntas": [
+          "1. ¿Qué busca el turista?",
+          "2. ¿En qué dirección está?",
+          "3. ¿Está lejos?"
+        ],
+        "respuestas_correctas": ["La estación de metro / El metro", "A la derecha", "No / A cinco minutos"],
+        "vocabulario_clave": ["estación", "metro", "calle", "derecha", "izquierda", "lejos"],
+        "estructuras_gramaticales": ["Estar + ubicación", "Preposiciones de lugar", "A + distancia"]
+      },
+      {
+        "id": "SIELE_A1_05",
+        "titulo": "En la cafetería",
+        "nivel": "A1",
+        "examen": "SIELE",
+        "tipo": "dialogo",
+        "duracion_segundos": 22,
+        "formato_oficial": "SIELE A1 - Tarea 1: Pedir en cafetería",
+        "contexto": "Cliente pide un café",
+        "personajes": [
+          {
+            "id": "p1",
+            "nombre": "Camarero",
+            "voz": "Alejandro",
+            "voice_id": "pqHfZKP75CvOlQylNhV4",
+            "genero": "hombre",
+            "rol": "Barista"
+          },
+          {
+            "id": "p2",
+            "nombre": "Cliente",
+            "voz": "Valentina",
+            "voice_id": "Valentina",
+            "genero": "mujer",
+            "rol": "Clienta"
+          }
+        ],
+        "lineas": [
+          {"personaje": "p1", "texto": "Hola, ¿qué desea?", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p2", "texto": "Un café con leche, por favor.", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p1", "texto": "¿Grande o pequeño?", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p2", "texto": "Grande.", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p1", "texto": "¿Para tomar aquí o para llevar?", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p2", "texto": "Para llevar.", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p1", "texto": "Son tres euros.", "pausa_antes": 0, "pausa_despues": 1.0}
+        ],
+        "preguntas": [
+          "1. ¿Qué pide la cliente?",
+          "2. ¿De qué tamaño?",
+          "3. ¿Para dónde lo pide?"
+        ],
+        "respuestas_correctas": ["Un café con leche / Café con leche", "Grande", "Para llevar"],
+        "vocabulario_clave": ["café", "leche", "grande", "pequeño", "llevar"],
+        "estructuras_gramaticales": ["Querer/Desear", "Para + infinitivo", "Tamaños"]
+      },
+      {
+        "id": "SIELE_A1_06",
+        "titulo": "Hablando del trabajo",
+        "nivel": "A1",
+        "examen": "SIELE",
+        "tipo": "dialogo",
+        "duracion_segundos": 24,
+        "formato_oficial": "SIELE A1 - Tarea 1: Profesiones",
+        "contexto": "Dos personas hablan sobre sus trabajos",
+        "personajes": [
+          {
+            "id": "p1",
+            "nombre": "Carlos",
+            "voz": "Alejandro",
+            "voice_id": "pqHfZKP75CvOlQylNhV4",
+            "genero": "hombre",
+            "rol": "Conocido"
+          },
+          {
+            "id": "p2",
+            "nombre": "Laura",
+            "voz": "Valentina",
+            "voice_id": "Valentina",
+            "genero": "mujer",
+            "rol": "Conocida"
+          }
+        ],
+        "lineas": [
+          {"personaje": "p1", "texto": "¿A qué te dedicas?", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p2", "texto": "Soy profesora de español.", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p1", "texto": "¿Dónde trabajas?", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p2", "texto": "En una escuela de idiomas.", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p1", "texto": "¿Te gusta tu trabajo?", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p2", "texto": "Sí, me encanta. ¿Y tú?", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p1", "texto": "Yo soy médico.", "pausa_antes": 0, "pausa_despues": 1.0}
+        ],
+        "preguntas": [
+          "1. ¿Cuál es la profesión de Laura?",
+          "2. ¿Dónde trabaja?",
+          "3. ¿Le gusta su trabajo?"
+        ],
+        "respuestas_correctas": ["Profesora de español / Profesora", "En una escuela de idiomas", "Sí / Le encanta"],
+        "vocabulario_clave": ["dedicarse", "profesora", "trabajar", "escuela", "médico"],
+        "estructuras_gramaticales": ["Ser + profesión", "Trabajar en", "Gustar/Encantar"]
+      },
+      {
+        "id": "SIELE_A1_07",
+        "titulo": "Comprando ropa",
+        "nivel": "A1",
+        "examen": "SIELE",
+        "tipo": "dialogo",
+        "duracion_segundos": 26,
+        "formato_oficial": "SIELE A1 - Tarea 2: Compras - Tallas y colores",
+        "contexto": "Cliente busca unos pantalones en una tienda",
+        "personajes": [
+          {
+            "id": "p1",
+            "nombre": "Vendedora",
+            "voz": "Lizy",
+            "voice_id": "Lizy",
+            "genero": "mujer",
+            "rol": "Dependienta"
+          },
+          {
+            "id": "p2",
+            "nombre": "Cliente",
+            "voz": "Alejandro",
+            "voice_id": "pqHfZKP75CvOlQylNhV4",
+            "genero": "hombre",
+            "rol": "Comprador"
+          }
+        ],
+        "lineas": [
+          {"personaje": "p1", "texto": "Buenas tardes, ¿puedo ayudarle?", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p2", "texto": "Sí, busco unos pantalones.", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p1", "texto": "¿Qué talla usa?", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p2", "texto": "Talla cuarenta y dos.", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p1", "texto": "Tenemos estos en negro y en azul.", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p2", "texto": "Me gustan los negros. ¿Puedo probarlos?", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p1", "texto": "Claro, los probadores están al fondo.", "pausa_antes": 0, "pausa_despues": 1.0}
+        ],
+        "preguntas": [
+          "1. ¿Qué busca el cliente?",
+          "2. ¿Qué talla usa?",
+          "3. ¿De qué color los elige?"
+        ],
+        "respuestas_correctas": ["Pantalones / Unos pantalones", "42 / Cuarenta y dos", "Negros / Negro"],
+        "vocabulario_clave": ["pantalones", "talla", "negro", "azul", "probar"],
+        "estructuras_gramaticales": ["Buscar", "Usar + talla", "Poder + infinitivo"]
+      },
+      {
+        "id": "SIELE_A1_08",
+        "titulo": "En clase de español",
+        "nivel": "A1",
+        "examen": "SIELE",
+        "tipo": "dialogo",
+        "duracion_segundos": 23,
+        "formato_oficial": "SIELE A1 - Tarea 1: Clase de idiomas",
+        "contexto": "Profesora pregunta a un estudiante",
+        "personajes": [
+          {
+            "id": "p1",
+            "nombre": "Profesora",
+            "voz": "Lizy",
+            "voice_id": "Lizy",
+            "genero": "mujer",
+            "rol": "Maestra"
+          },
+          {
+            "id": "p2",
+            "nombre": "Estudiante",
+            "voz": "Alejandro",
+            "voice_id": "pqHfZKP75CvOlQylNhV4",
+            "genero": "hombre",
+            "rol": "Alumno"
+          }
+        ],
+        "lineas": [
+          {"personaje": "p1", "texto": "¿Cuánto tiempo llevas estudiando español?", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p2", "texto": "Llevo seis meses.", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p1", "texto": "¿Por qué estudias español?", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p2", "texto": "Porque quiero viajar a España.", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p1", "texto": "¿Practicas español en casa?", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p2", "texto": "Sí, veo películas en español.", "pausa_antes": 0, "pausa_despues": 1.0}
+        ],
+        "preguntas": [
+          "1. ¿Cuánto tiempo lleva estudiando?",
+          "2. ¿Por qué estudia español?",
+          "3. ¿Cómo practica en casa?"
+        ],
+        "respuestas_correctas": ["Seis meses / 6 meses", "Porque quiere viajar a España / Para viajar", "Ve películas en español / Viendo películas"],
+        "vocabulario_clave": ["llevar", "estudiar", "meses", "viajar", "practicar"],
+        "estructuras_gramaticales": ["Llevar + gerundio", "Porque + razón", "Ver + películas"]
+      },
+      {
+        "id": "SIELE_A1_09",
+        "titulo": "Invitación a fiesta",
+        "nivel": "A1",
+        "examen": "SIELE",
+        "tipo": "dialogo",
+        "duracion_segundos": 25,
+        "formato_oficial": "SIELE A1 - Tarea 1: Invitaciones sociales",
+        "contexto": "Persona invita a otra a una fiesta",
+        "personajes": [
+          {
+            "id": "p1",
+            "nombre": "Rosa",
+            "voz": "Valentina",
+            "voice_id": "Valentina",
+            "genero": "mujer",
+            "rol": "Anfitriona"
+          },
+          {
+            "id": "p2",
+            "nombre": "Miguel",
+            "voz": "Alejandro",
+            "voice_id": "pqHfZKP75CvOlQylNhV4",
+            "genero": "hombre",
+            "rol": "Invitado"
+          }
+        ],
+        "lineas": [
+          {"personaje": "p1", "texto": "El sábado es mi cumpleaños. ¿Puedes venir a mi fiesta?", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p2", "texto": "Claro, me encantaría. ¿A qué hora?", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p1", "texto": "A las ocho de la noche.", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p2", "texto": "¿Dónde es?", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p1", "texto": "En mi casa, en la calle Mayor número quince.", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p2", "texto": "Perfecto, allí estaré.", "pausa_antes": 0, "pausa_despues": 0.8},
+          {"personaje": "p1", "texto": "Gracias, nos vemos el sábado.", "pausa_antes": 0, "pausa_despues": 1.0}
+        ],
+        "preguntas": [
+          "1. ¿Qué celebra Rosa?",
+          "2. ¿A qué hora es la fiesta?",
+          "3. ¿Dónde es la fiesta?"
+        ],
+        "respuestas_correctas": ["Su cumpleaños", "A las ocho / 8:00", "En su casa, calle Mayor 15"],
+        "vocabulario_clave": ["cumpleaños", "fiesta", "hora", "casa", "calle"],
+        "estructuras_gramaticales": ["Poder + infinitivo", "A + hora", "En + lugar"]
+      },
+      {
+        "id": "SIELE_A1_10",
+        "titulo": "Mensaje de WhatsApp",
+        "nivel": "A1",
+        "examen": "SIELE",
+        "tipo": "monologo",
+        "duracion_segundos": 18,
+        "formato_oficial": "SIELE A1 - Tarea 3: Mensaje de voz",
+        "contexto": "Persona deja mensaje de voz sobre cambio de planes",
+        "personajes": [
+          {
+            "id": "p1",
+            "nombre": "Patricia",
+            "voz": "Valentina",
+            "voice_id": "Valentina",
+            "genero": "mujer",
+            "rol": "Amiga"
+          }
+        ],
+        "lineas": [
+          {"personaje": "p1", "texto": "Hola, soy Patricia. Lo siento, pero no puedo ir al cine mañana. Tengo que trabajar hasta muy tarde. ¿Podemos dejarlo para el fin de semana? Avísame. Gracias.", "pausa_antes": 0, "pausa_despues": 1.5}
+        ],
+        "preguntas": [
+          "1. ¿Quién deja el mensaje?",
+          "2. ¿Puede ir al cine mañana?",
+          "3. ¿Cuándo propone ir?"
+        ],
+        "respuestas_correctas": ["Patricia", "No", "El fin de semana"],
+        "vocabulario_clave": ["mensaje", "trabajar", "tarde", "fin de semana", "avisar"],
+        "estructuras_gramaticales": ["Tener que + infinitivo", "Poder", "Hasta + tiempo"]
+      }
+    ]
+  }
+}
