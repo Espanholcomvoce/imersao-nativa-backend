@@ -51,7 +51,7 @@ router.post('/token', auth, async (req, res) => {
   if (remaining <= 0) return res.status(403).json({ error: 'Limite diário atingido.', limit_reached: true });
 
   const { level, situation, voice } = req.body || {};
-  const selectedVoice = ['shimmer','alloy','nova','coral','sage','ash','ballad','verse'].includes(voice) ? voice : 'shimmer';
+  const selectedVoice = ['alloy','ash','ballad'].includes(voice) ? voice : 'shimmer';
 
   const sitMap = {
     cafe: 'num café', hotel: 'num hotel', trabajo: 'no trabalho',
@@ -98,8 +98,8 @@ Saluda como amiga. Solo 1 frase cálida + 1 pregunta concreta. Nada más. NUNCA 
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: 'gpt-4o-realtime-preview',
-        voice: 'nova',
+        model: 'gpt-4o-realtime-preview-2024-12-17',
+        voice: 'alloy',
         instructions,
         input_audio_transcription: { model: 'whisper-1' },
         turn_detection: {
