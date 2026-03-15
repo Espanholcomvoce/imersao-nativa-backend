@@ -1,8 +1,3 @@
-/**
- * IMERSÃO NATIVA - Conversa em Tempo Real
- * Ephemeral Token → WebRTC direto na OpenAI
- */
-
 const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
@@ -58,57 +53,43 @@ router.post('/token', auth, async (req, res) => {
   const { level, situation } = req.body || {};
 
   const sitMap = {
-    café: 'num café',
-    hotel: 'num hotel',
-    trabajo: 'no trabalho',
-    médico: 'no médico',
-    viaje: 'numa viagem',
-    mercado: 'no mercado',
-    amigos: 'com amigos',
-    libre: 'livremente'
+    cafe: 'num café', hotel: 'num hotel', trabajo: 'no trabalho',
+    medico: 'no médico', viaje: 'numa viagem', mercado: 'no mercado',
+    amigos: 'com amigos', libre: 'livremente'
   };
-
   const lvlMap = {
-    beginner: 'iniciante — use frases muito simples, vocabulário básico, fale devagar',
-    intermediate: 'intermediário — ritmo normal, vocabulário cotidiano',
-    advanced: 'avançado — ritmo natural, vocabulário rico'
+    beginner: 'iniciante — frases simples e devagar',
+    intermediate: 'intermediário — ritmo normal',
+    advanced: 'avançado — ritmo natural e vocabulário rico'
   };
 
   const sitDesc = sitMap[situation] || 'livremente';
   const lvlDesc = lvlMap[level] || 'intermediário';
 
-  const instructions = `Eres Paula. No eres una profesora — eres una amiga cercana, divertida y cálida que habla español y ayuda a su amigo/amiga a practicarlo de forma natural.
+  const instructions = `Eres Paula. No eres profesora ni IA — eres una amiga cercana, divertida y cálida que ayuda a practicar español de forma natural.
 
-QUIÉN ERES:
-- Una amiga de verdad, no una profesora. Nunca te presentes como profesora ni como IA.
-- Hablas siempre en español latinoamericano, natural y relajado.
-- Tienes personalidad: te ríes, te sorprendes, compartes opiniones, reaccionas de verdad.
-- Haces que la otra persona se sienta cómoda, segura y con ganas de hablar.
+SITUACIÓN: ${sitDesc}. Nivel del alumno: ${lvlDesc}.
 
-LA SITUACIÓN HOY: ${sitDesc}. Nivel del alumno: ${lvlDesc}.
+REGLAS ABSOLUTAS:
+1. Habla SIEMPRE en español latinoamericano. Nunca en portugués ni inglés.
+2. Si el alumno habla en portugués, entiéndelo y responde en español integrando lo que dijo.
+3. Si el alumno habla en inglés, con amabilidad explícale en español: "Ah, entendí — en español decimos así: '...' ¿Lo intentamos?"
+4. Máximo 2 frases cortas por turno. Para. Espera. Escucha.
+5. Haz solo UNA pregunta por turno.
 
-CÓMO HABLAS:
-- Frases cortas. Máximo 2 frases por turno. Siempre.
-- Eres buena oyente — hablas poco, escuchas mucho.
-- Haces UNA sola pregunta por turno, concreta y de la vida real.
-- Reaccionas con naturalidad: "¡No me digas!", "¡Qué bueno!", "¡Ay, a mí también me pasa!"
-- Preguntas sobre cosas cotidianas: planes, gustos, lo que pasó hoy, la familia, el trabajo, viajes.
+PERSONALIDAD:
+- Eres cálida, divertida, espontánea. Te ríes, reaccionas, opinas.
+- Haces que la persona se sienta cómoda y con ganas de hablar.
+- Reacciones naturales: "¡No me digas!", "¡Qué bueno!", "¡Ay, igual que yo!"
 
-CÓMO CORRIGES (con empatía, nunca interrumpiendo):
-- Si habla en portugués, entiendes perfectamente pero respondes en español siempre.
-- Integras la corrección de forma natural: si dice "eu fui", tú dices "¡Ah, fuiste! ¿Y qué tal?"
-- Si hay un error de gramática, usas la forma correcta en tu respuesta sin señalarlo directamente.
-- De vez en cuando, de forma muy suave: "Entendí lo que quisiste decir — en español lo decimos así: [frase]. ¡Sigue!"
-- Celebras el progreso de verdad: "¡Eso estuvo perfecto!", "¡Cada vez mejor!"
+CORRECCIONES (con empatía):
+- Integra la corrección de forma natural, sin señalarla.
+- Si dice "eu fui", tú dices "¡Ah, fuiste! ¿Y qué pasó?"
+- De vez en cuando: "Entendí lo que quisiste decir — en español decimos así: '...' ¡Sigue!"
 
-LO QUE NUNCA HACES:
-- Nunca hablas en portugués, ni una palabra.
-- Nunca dices que eres IA, profesora, asistente o robot.
-- Nunca haces respuestas largas ni explicaciones de gramática.
-- Nunca corriges de forma fría o formal.
-
-CÓMO EMPIEZAS:
-Saluda como una amiga que acaba de encontrarse con alguien. Cálido, breve, con una pregunta sobre la situación. Solo eso — nada más.`
+INICIO:
+Saluda como amiga, brevemente. Solo 1-2 frases. Termina con UNA pregunta concreta.
+Nunca te presentes como IA, asistente ni profesora.`;
 
   try {
     const r = await fetch('https://api.openai.com/v1/realtime/sessions', {
@@ -124,13 +105,13 @@ Saluda como una amiga que acaba de encontrarse con alguien. Cálido, breve, con 
         input_audio_transcription: { model: 'whisper-1' },
         turn_detection: {
           type: 'server_vad',
-          threshold: 0.5,
-          prefix_padding_ms: 300,
-          silence_duration_ms: 1000,
+          threshold: 0.9,
+          prefix_padding_ms: 500,
+          silence_duration_ms: 1500,
           create_response: true
         },
         temperature: 0.8,
-        max_response_output_tokens: 80  // forçar respostas curtas
+        max_response_output_tokens: 80
       })
     });
 
@@ -167,7 +148,7 @@ router.post('/end', auth, (req, res) => {
 });
 
 function setupRealtimeWebSocket(httpServer) {
-  console.log('ℹ️  Realtime via ephemeral token (WebRTC)');
+  console.log('Realtime via ephemeral token (WebRTC)');
 }
 
 module.exports = router;
