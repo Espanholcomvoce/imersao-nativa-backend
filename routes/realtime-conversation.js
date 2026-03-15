@@ -102,13 +102,7 @@ Saluda como amiga. Solo 1 frase cálida + 1 pregunta concreta. Nada más. NUNCA 
         voice: 'alloy',
         instructions,
         input_audio_transcription: { model: 'whisper-1' },
-        turn_detection: {
-          type: 'server_vad',
-          threshold: 0.5,
-          prefix_padding_ms: 300,
-          silence_duration_ms: 2000,
-          create_response: true
-        },
+        turn_detection: null,  // PTT — aluno controla quando fala
         temperature: 0.8,
         max_response_output_tokens: 100
       })
