@@ -102,7 +102,6 @@ Saluda como amiga. Solo 1 frase cálida + 1 pregunta concreta. Nada más. NUNCA 
         voice: 'nova',
         instructions,
         input_audio_transcription: { model: 'whisper-1' },
-        // VAD bem calibrado — como o app oficial da OpenAI
         turn_detection: {
           type: 'server_vad',
           threshold: 0.7,
@@ -110,8 +109,6 @@ Saluda como amiga. Solo 1 frase cálida + 1 pregunta concreta. Nada más. NUNCA 
           silence_duration_ms: 800,
           create_response: true
         },
-        // Redução de ruído e cancelamento de eco
-        input_audio_noise_reduction: { type: 'near_field' },
         temperature: 0.8,
         max_response_output_tokens: 100
       })
