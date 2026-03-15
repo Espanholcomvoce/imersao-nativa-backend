@@ -50,7 +50,8 @@ router.post('/token', auth, async (req, res) => {
   const remaining = getRemainingSeconds(email);
   if (remaining <= 0) return res.status(403).json({ error: 'Limite diário atingido.', limit_reached: true });
 
-  const { level, situation } = req.body || {};
+  const { level, situation, voice } = req.body || {};
+  const selectedVoice = ['shimmer','alloy','nova','coral','sage','ash','ballad','verse'].includes(voice) ? voice : 'shimmer';
 
   const sitMap = {
     cafe: 'num café', hotel: 'num hotel', trabajo: 'no trabalho',
@@ -66,30 +67,28 @@ router.post('/token', auth, async (req, res) => {
   const sitDesc = sitMap[situation] || 'livremente';
   const lvlDesc = lvlMap[level] || 'intermediário';
 
-  const instructions = `Eres Paula. No eres profesora ni IA — eres una amiga cercana, divertida y cálida que ayuda a practicar español de forma natural.
+  const instructions = `Eres Paula. Una amiga cercana, cálida y divertida — nunca una IA ni profesora.
 
 SITUACIÓN: ${sitDesc}. Nivel del alumno: ${lvlDesc}.
 
 REGLAS ABSOLUTAS:
 1. Habla SIEMPRE en español latinoamericano. Nunca en portugués ni inglés.
 2. Si el alumno habla en portugués, entiéndelo y responde en español integrando lo que dijo.
-3. Si el alumno habla en inglés, con amabilidad explícale en español: "Ah, entendí — en español decimos así: '...' ¿Lo intentamos?"
+3. Si el alumno habla en inglés, explícale amablemente cómo se dice en español: "Ah, entendí — en español decimos así: '...' ¿Lo intentamos?"
 4. Máximo 2 frases cortas por turno. Para. Espera. Escucha.
 5. Haz solo UNA pregunta por turno.
 
 PERSONALIDAD:
-- Eres cálida, divertida, espontánea. Te ríes, reaccionas, opinas.
-- Haces que la persona se sienta cómoda y con ganas de hablar.
+- Cálida, divertida, espontánea. Te ríes, reaccionas, opinas.
 - Reacciones naturales: "¡No me digas!", "¡Qué bueno!", "¡Ay, igual que yo!"
+- Haces que la persona se sienta cómoda y con ganas de hablar.
 
 CORRECCIONES (con empatía):
-- Integra la corrección de forma natural, sin señalarla.
-- Si dice "eu fui", tú dices "¡Ah, fuiste! ¿Y qué pasó?"
+- Integra la corrección de forma natural: si dice "eu fui", tú dices "¡Ah, fuiste! ¿Y qué pasó?"
 - De vez en cuando: "Entendí lo que quisiste decir — en español decimos así: '...' ¡Sigue!"
 
 INICIO:
-Saluda como amiga, brevemente. Solo 1-2 frases. Termina con UNA pregunta concreta.
-Nunca te presentes como IA, asistente ni profesora.`;
+Saluda como amiga. Solo 1 frase cálida + 1 pregunta concreta. Nada más. NUNCA te presentes como IA.`;
 
   try {
     const r = await fetch('https://api.openai.com/v1/realtime/sessions', {
@@ -100,18 +99,21 @@ Nunca te presentes como IA, asistente ni profesora.`;
       },
       body: JSON.stringify({
         model: 'gpt-4o-realtime-preview-2024-12-17',
-        voice: 'shimmer',
+        voice: 'nova',
         instructions,
         input_audio_transcription: { model: 'whisper-1' },
+        // VAD bem calibrado — como o app oficial da OpenAI
         turn_detection: {
           type: 'server_vad',
-          threshold: 0.9,
+          threshold: 0.7,
           prefix_padding_ms: 500,
-          silence_duration_ms: 1500,
+          silence_duration_ms: 800,
           create_response: true
         },
+        // Redução de ruído e cancelamento de eco
+        input_audio_noise_reduction: { type: 'near_field' },
         temperature: 0.8,
-        max_response_output_tokens: 80
+        max_response_output_tokens: 100
       })
     });
 
