@@ -98,7 +98,7 @@ Saluda como amiga. Solo 1 frase cálida + 1 pregunta concreta. Nada más. NUNCA 
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: 'gpt-4o-realtime-preview-2024-12-17',
+        model: 'gpt-4o-realtime-preview',
         voice: 'nova',
         instructions,
         input_audio_transcription: { model: 'whisper-1' },
@@ -116,8 +116,9 @@ Saluda como amiga. Solo 1 frase cálida + 1 pregunta concreta. Nada más. NUNCA 
 
     if (!r.ok) {
       const err = await r.text();
-      console.error('[REALTIME] OpenAI error:', err);
-      return res.status(502).json({ error: 'Erro ao criar sessão.' });
+      console.error('[REALTIME] OpenAI error status:', r.status);
+      console.error('[REALTIME] OpenAI error body:', err);
+      return res.status(502).json({ error: 'Erro ao criar sessão.', detail: err });
     }
 
     const session = await r.json();
