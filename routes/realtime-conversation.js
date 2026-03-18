@@ -5,6 +5,7 @@
 
 const express = require('express');
 const router = express.Router();
+router.use(function(req, res, next) { req.app.set('trust proxy', 1); next(); });
 const jwt = require('jsonwebtoken');
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
