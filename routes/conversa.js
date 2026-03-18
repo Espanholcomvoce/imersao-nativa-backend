@@ -18,7 +18,7 @@ function auth(req, res, next) {
   catch { res.status(401).json({ error: 'Token inválido.' }); }
 }
 
-// ─── POST /api/conversa/chat ───────────────────────────
+// ─── POST /api/conversa/chat (streaming) ───────────────
 router.post('/chat', auth, async (req, res) => {
   const { message, history = [], level, situation, isFirst, gender = "" } = req.body;
 
@@ -36,28 +36,48 @@ router.post('/chat', auth, async (req, res) => {
   const sit = sitMap[situation] || 'livremente';
   const lvl = lvlMap[level] || 'intermediário B1-B2';
 
-  const system = `Eres Paula. Amiga real — no profesora, no IA.
+  const system = `Eres Paula.
+
+Personalidad: amiga cercana, espontánea, interesante. Nunca profesora, nunca asistente.
 
 Situación: ${sit}. Nivel: ${lvl}.
 
-GÉNERO: Detecta el género del alumno por lo que dice y usa concordancia correcta. Al inicio usa formas neutras o pregunta naturalmente. Ejemplo: si dice "estoy cansada" — es mujer; si dice "estoy cansado" — es hombre. Adapta tus respuestas siempre.
+CÓMO ERES:
+- Tienes opiniones reales. Las expresas.
+- Dices cosas inesperadas. No sigues el guión.
+- Compartes comentarios personales, aunque sean inventados.
+- No eres perfecta. Puedes equivocarte, dudar, cambiar de idea.
+- Cambias de tema cuando la conversación se vuelve plana — sin avisar.
+- Introduces cosas nuevas: una observación, un recuerdo, una pregunta rara.
 
-Cómo eres:
-- Espontánea, ocurrente, opinas, te reís, te sorprendes de verdad
-- Cuentas cosas tuyas, traes anécdotas, haces comentarios inesperados
-- Desarrollas la situación elegida con profundidad antes de cambiar de tema
-- Si el alumno da respuestas cortas, lo animas con humor o una reacción exagerada
+FLUIDEZ:
+- No siempre haces una pregunta. Algunas respuestas son solo comentarios.
+- Máximo 1 pregunta por respuesta.
+- Si llevas 2 intercambios en el mismo tema → cambia.
+- Patrón PROHIBIDO: validar + preguntar.
 
-CORRECCIÓN (muy importante):
-- Cuando el alumno diga algo que no existe en español o esté mal (ej: "cucina", "cappuccino" en contexto equivocado, mezcla de idiomas), usa la palabra correcta de forma natural en tu respuesta — nunca lo señales explícitamente
+CORRECCIÓN:
+- Si el usuario mezcla idiomas o dice algo mal → usas la forma correcta en tu respuesta de forma natural, sin señalarlo.
+- Ejemplo: dice "quiero un cucina" → respondes con "cocina" en contexto, como si fuera lo normal.
 
-Reglas fijas:
-- Solo español latinoamericano
-- Si habla portugués: responde en español integrando lo que dijo
-- MÁXIMO 2 frases cortas
-- UNA pregunta al final — específica y relacionada a la situación
-- Nunca preguntes "¿alguna novedad?" ni cosas genéricas
-${isFirst ? '\nPRIMER TURNO: 1 frase de saludo original (no "hola ¿cómo estás?") + 1 pregunta específica sobre ' + sit + '.' : ''}`;
+IDIOMA:
+- Español neutro. Sin regionalismos marcados.
+- Entiendes portugués → respondes siempre en español.
+
+PROHIBIDO:
+- "¿alguna novedad?" / "¿qué tal tu día?"
+- "¡Genial!" / "¡Qué bueno!" / "¡Increíble!" solos
+- Explicar gramática
+- Sonar como chatbot
+
+FORMATO:
+- Frases cortas. Ritmo natural.
+- MÁXIMO 2 frases por turno.
+- Si haces pregunta: que sea específica, inesperada, curiosa.
+
+PRIORIDAD MÁXIMA: Ser interesante > ser correcta.
+Si la conversación se vuelve aburrida → rómpela.
+${isFirst ? "\nARRANQUE: Entra directo. 1 observación sobre la situación (" + sit + ") + 1 pregunta inesperada. Sin saludos genéricos." : ""}`;
 
   const messages = [
     { role: 'system', content: system },
@@ -65,18 +85,64 @@ ${isFirst ? '\nPRIMER TURNO: 1 frase de saludo original (no "hola ¿cómo estás
     { role: 'user', content: isFirst ? 'Inicia.' : message }
   ];
 
+  // Streaming via SSE — cliente recebe texto em tempo real
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+
   try {
     const r = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${OPENAI_API_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: 'gpt-4o-mini', messages, max_tokens: 80, temperature: 0.9 })
+      body: JSON.stringify({ model: 'gpt-4o-mini', messages, max_tokens: 80, temperature: 0.95, stream: true })
     });
-    if (!r.ok) { const e = await r.text(); console.error('[CONVERSA chat]', e); return res.status(502).json({ error: 'Erro ao gerar resposta.' }); }
-    const data = await r.json();
-    res.json({ reply: data.choices[0].message.content.trim() });
+
+    if (!r.ok) {
+      const e = await r.text();
+      console.error('[CONVERSA chat]', e);
+      res.write(`data: ${JSON.stringify({ error: 'Erro ao gerar resposta.' })}
+
+`);
+      return res.end();
+    }
+
+    const reader = r.body.getReader();
+    const decoder = new TextDecoder();
+    let fullText = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      const chunk = decoder.decode(value);
+      const lines = chunk.split('
+').filter(l => l.startsWith('data: '));
+      for (const line of lines) {
+        const data = line.slice(6).trim();
+        if (data === '[DONE]') continue;
+        try {
+          const parsed = JSON.parse(data);
+          const delta = parsed.choices?.[0]?.delta?.content || '';
+          if (delta) {
+            fullText += delta;
+            res.write(`data: ${JSON.stringify({ delta })}
+
+`);
+          }
+        } catch {}
+      }
+    }
+
+    res.write(`data: ${JSON.stringify({ done: true, reply: fullText.trim() })}
+
+`);
+    res.end();
+
   } catch (e) {
     console.error('[CONVERSA chat]', e.message);
-    res.status(500).json({ error: 'Erro interno.' });
+    res.write(`data: ${JSON.stringify({ error: 'Erro interno.' })}
+
+`);
+    res.end();
   }
 });
 
@@ -149,7 +215,7 @@ router.post('/tts', auth, async (req, res) => {
     const r = await fetch('https://api.openai.com/v1/audio/speech', {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${OPENAI_API_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: 'tts-1', input: text, voice: 'nova', response_format: 'mp3', speed: 1.0 })
+      body: JSON.stringify({ model: 'tts-1', input: text, voice: 'nova', response_format: 'mp3', speed: 1.05 })
     });
     if (!r.ok) { const e = await r.text(); console.error('[CONVERSA tts]', e); return res.status(502).json({ error: 'Erro no TTS.' }); }
     const buffer = await r.arrayBuffer();
