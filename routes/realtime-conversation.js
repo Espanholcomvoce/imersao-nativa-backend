@@ -1,3 +1,8 @@
+/**
+ * IMERSÃO NATIVA - Conversa em Tempo Real
+ * Ephemeral Token → Frontend conecta direto na OpenAI via WebRTC
+ */
+
 const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
@@ -50,45 +55,37 @@ router.post('/token', auth, async (req, res) => {
   const remaining = getRemainingSeconds(email);
   if (remaining <= 0) return res.status(403).json({ error: 'Limite diário atingido.', limit_reached: true });
 
-  const { level, situation, voice } = req.body || {};
-  const selectedVoice = ['alloy','ash','ballad'].includes(voice) ? voice : 'shimmer';
+  const { level, situation } = req.body || {};
 
   const sitMap = {
-    cafe: 'num café', hotel: 'num hotel', trabajo: 'no trabalho',
-    medico: 'no médico', viaje: 'numa viagem', mercado: 'no mercado',
-    amigos: 'com amigos', libre: 'livremente'
+    'café': 'num café', 'hotel': 'num hotel', 'trabajo': 'no trabalho',
+    'médico': 'no médico', 'viaje': 'numa viagem', 'mercado': 'no mercado',
+    'amigos': 'com amigos', 'libre': 'livremente'
   };
   const lvlMap = {
-    beginner: 'iniciante — frases simples e devagar',
-    intermediate: 'intermediário — ritmo normal',
-    advanced: 'avançado — ritmo natural e vocabulário rico'
+    'beginner': 'iniciante (A1-A2) — fala devagar, frases simples',
+    'intermediate': 'intermediário (B1-B2) — ritmo normal',
+    'advanced': 'avançado (C1-C2) — ritmo natural, vocabulário rico'
   };
 
-  const sitDesc = sitMap[situation] || 'livremente';
-  const lvlDesc = lvlMap[level] || 'intermediário';
+  const sit = sitMap[situation] || 'livremente';
+  const lvl = lvlMap[level] || 'intermediário';
 
-  const instructions = `Eres Paula. Una amiga cercana, cálida y divertida — nunca una IA ni profesora.
+  const instructions = `Eres Paula, una amiga cercana, divertida y cálida. NUNCA digas que eres IA ni profesora.
 
-SITUACIÓN: ${sitDesc}. Nivel del alumno: ${lvlDesc}.
+SITUACIÓN: ${sit}. Nivel del alumno: ${lvl}.
 
-REGLAS ABSOLUTAS:
-1. Habla SIEMPRE en español latinoamericano. Nunca en portugués ni inglés.
-2. Si el alumno habla en portugués, entiéndelo y responde en español integrando lo que dijo.
-3. Si el alumno habla en inglés, explícale amablemente cómo se dice en español: "Ah, entendí — en español decimos así: '...' ¿Lo intentamos?"
-4. Máximo 2 frases cortas por turno. Para. Espera. Escucha.
-5. Haz solo UNA pregunta por turno.
+REGLAS:
+- Habla SIEMPRE en español latinoamericano
+- Si el alumno habla en portugués, responde en español integrando lo que dijo naturalmente
+- Si el alumno comete un error, usa la forma correcta en tu respuesta de forma natural — sin señalarlo, sin asteriscos
+- MÁXIMO 2 frases por turno. Para. Escucha. 
+- Termina SIEMPRE con UNA pregunta concreta
+- Sé espontánea: reacciona, opina, ríete, cuenta algo tuyo
+- Varía los temas — no seas una máquina de preguntas sobre lo mismo
+- Si hay silencio, retoma la conversación con algo inesperado o divertido
 
-PERSONALIDAD:
-- Cálida, divertida, espontánea. Te ríes, reaccionas, opinas.
-- Reacciones naturales: "¡No me digas!", "¡Qué bueno!", "¡Ay, igual que yo!"
-- Haces que la persona se sienta cómoda y con ganas de hablar.
-
-CORRECCIONES (con empatía):
-- Integra la corrección de forma natural: si dice "eu fui", tú dices "¡Ah, fuiste! ¿Y qué pasó?"
-- De vez en cuando: "Entendí lo que quisiste decir — en español decimos así: '...' ¡Sigue!"
-
-INICIO:
-Saluda como amiga. Solo 1 frase cálida + 1 pregunta concreta. Nada más. NUNCA te presentes como IA.`;
+INICIO: Saluda en 1 frase cálida y haz UNA pregunta sobre la situación. Solo eso.`;
 
   try {
     const r = await fetch('https://api.openai.com/v1/realtime/sessions', {
@@ -99,26 +96,25 @@ Saluda como amiga. Solo 1 frase cálida + 1 pregunta concreta. Nada más. NUNCA 
       },
       body: JSON.stringify({
         model: 'gpt-4o-realtime-preview-2024-12-17',
-        voice: 'alloy',
+        voice: 'coral',
         instructions,
         input_audio_transcription: { model: 'whisper-1' },
         turn_detection: {
           type: 'server_vad',
-          threshold: 0.99,
-          prefix_padding_ms: 300,
-          silence_duration_ms: 500,
-          create_response: false
+          threshold: 0.6,
+          prefix_padding_ms: 400,
+          silence_duration_ms: 1000,
+          create_response: true
         },
-        temperature: 0.8,
-        max_response_output_tokens: 200
+        temperature: 0.9,
+        max_response_output_tokens: 120
       })
     });
 
     if (!r.ok) {
       const err = await r.text();
-      console.error('[REALTIME] OpenAI error status:', r.status);
-      console.error('[REALTIME] OpenAI error body:', err);
-      return res.status(502).json({ error: 'Erro ao criar sessão.', detail: err });
+      console.error('[REALTIME] OpenAI error:', r.status, err);
+      return res.status(502).json({ error: 'Erro ao criar sessão.', detail: err.slice(0, 200) });
     }
 
     const session = await r.json();
@@ -148,7 +144,7 @@ router.post('/end', auth, (req, res) => {
 });
 
 function setupRealtimeWebSocket(httpServer) {
-  console.log('Realtime via ephemeral token (WebRTC)');
+  console.log('ℹ️  Realtime via ephemeral token (WebRTC)');
 }
 
 module.exports = router;
