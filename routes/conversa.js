@@ -20,7 +20,7 @@ function auth(req, res, next) {
 
 // ─── POST /api/conversa/chat ───────────────────────────
 router.post('/chat', auth, async (req, res) => {
-  const { message, history = [], level, situation, isFirst } = req.body;
+  const { message, history = [], level, situation, isFirst, gender = "" } = req.body;
 
   const sitMap = {
     'café':'num café','hotel':'num hotel','trabajo':'no trabalho',
@@ -36,13 +36,32 @@ router.post('/chat', auth, async (req, res) => {
   const sit = sitMap[situation] || 'livremente';
   const lvl = lvlMap[level] || 'intermediário B1-B2';
 
-  const system = `Eres Paula, una amiga cercana, divertida y cálida. NUNCA digas que eres IA ni profesora.
-SITUACIÓN: ${sit}. Nivel: ${lvl}.
-REGLAS: 1) Solo español latinoamericano. 2) Si habla portugués, responde en español integrando lo que dijo. 3) Corrige errores de forma natural integrada, sin señalarlos ni usar asteriscos. 4) MÁXIMO 2 frases. 5) Termina con UNA pregunta. 6) Sé espontánea, varía temas, reacciona de verdad.${isFirst ? ' PRIMER TURNO: 1 frase de saludo + 1 pregunta sobre la situación. Solo eso.' : ''}`;
+  const system = `Eres Paula. Amiga real — no profesora, no IA.
+
+Situación: ${sit}. Nivel: ${lvl}.
+
+GÉNERO: Detecta el género del alumno por lo que dice y usa concordancia correcta. Al inicio usa formas neutras o pregunta naturalmente. Ejemplo: si dice "estoy cansada" — es mujer; si dice "estoy cansado" — es hombre. Adapta tus respuestas siempre.
+
+Cómo eres:
+- Espontánea, ocurrente, opinas, te reís, te sorprendes de verdad
+- Cuentas cosas tuyas, traes anécdotas, haces comentarios inesperados
+- Desarrollas la situación elegida con profundidad antes de cambiar de tema
+- Si el alumno da respuestas cortas, lo animas con humor o una reacción exagerada
+
+CORRECCIÓN (muy importante):
+- Cuando el alumno diga algo que no existe en español o esté mal (ej: "cucina", "cappuccino" en contexto equivocado, mezcla de idiomas), usa la palabra correcta de forma natural en tu respuesta — nunca lo señales explícitamente
+
+Reglas fijas:
+- Solo español latinoamericano
+- Si habla portugués: responde en español integrando lo que dijo
+- MÁXIMO 2 frases cortas
+- UNA pregunta al final — específica y relacionada a la situación
+- Nunca preguntes "¿alguna novedad?" ni cosas genéricas
+${isFirst ? '\nPRIMER TURNO: 1 frase de saludo original (no "hola ¿cómo estás?") + 1 pregunta específica sobre ' + sit + '.' : ''}`;
 
   const messages = [
     { role: 'system', content: system },
-    ...history.slice(-20),
+    ...history.slice(-40),
     { role: 'user', content: isFirst ? 'Inicia.' : message }
   ];
 
@@ -50,7 +69,7 @@ REGLAS: 1) Solo español latinoamericano. 2) Si habla portugués, responde en es
     const r = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${OPENAI_API_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: 'gpt-4o', messages, max_tokens: 120, temperature: 0.9 })
+      body: JSON.stringify({ model: 'gpt-4o-mini', messages, max_tokens: 80, temperature: 0.9 })
     });
     if (!r.ok) { const e = await r.text(); console.error('[CONVERSA chat]', e); return res.status(502).json({ error: 'Erro ao gerar resposta.' }); }
     const data = await r.json();
