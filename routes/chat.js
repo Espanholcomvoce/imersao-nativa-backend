@@ -107,8 +107,12 @@ router.post('/', authMiddleware, async (req, res) => {
   const systemPrompt = SYSTEM_PROMPTS[selectedContext];
 
   try {
+    // Modelo rápido para tareas simples, Sonnet para conversación
+    const fastContexts = ['vocabulary', 'correction'];
+    const model = fastContexts.includes(selectedContext) ? 'claude-haiku-4-5-20251001' : 'claude-sonnet-4-20250514';
+
     const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
+      model,
       max_tokens: 500,
       system: `${systemPrompt}\n\nNivel del alumno: ${selectedLevel}`,
       messages
@@ -161,7 +165,7 @@ router.post('/correction', authMiddleware, async (req, res) => {
 
   try {
     const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-haiku-4-5-20251001',
       max_tokens: 800,
       system: SYSTEM_PROMPTS.correction,
       messages: [{
