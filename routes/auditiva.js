@@ -47,7 +47,7 @@ const GUIDE_VOICES = {
   argentina:   { voice_id: '1WXz8v08ntDcSTeVXMN2', settings: SAFE_SETTINGS },  // Malena Tango — rioplatense, storyteller
   bolivia:     { voice_id: 'XB0fDUnXU5powFXDhCwa', settings: SAFE_SETTINGS },  // Lizy — colombiana (latina, não espanhola)
   chile:       { voice_id: 'Fd38GRHtJllY0CuguAy9', settings: SAFE_SETTINGS },  // Victoria — chilena
-  colombia:    { voice_id: 'XB0fDUnXU5powFXDhCwa', settings: SAFE_SETTINGS },  // Lizy — colombiana nativa
+  colombia:    { voice_id: 'MqSrMUk8EHh32HBKytrG', settings: SAFE_SETTINGS },  // Jessica — colombiana natural
   costarica:   { voice_id: 'cgSgspJ2msm6clMCkdW9', settings: SAFE_SETTINGS },  // Valentina
   cuba:        { voice_id: 'nPczCjzI2devNBz1zQrb', settings: CARIB_SETTINGS }, // Eleguar — caribeño
   ecuador:     { voice_id: 'DZksvRcjbVkbnIwYVMEQ', settings: SAFE_SETTINGS },  // Esaú — ecuatoriano cálido
