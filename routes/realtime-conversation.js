@@ -113,7 +113,7 @@ PRIMER TURNO: Saluda de forma breve y natural. Ejemplo: "¡Hola! ¿Qué tal tu d
           create_response: true
         },
         temperature: 0.8,
-        max_response_output_tokens: 400
+        max_response_output_tokens: 'inf'
       })
     });
 
