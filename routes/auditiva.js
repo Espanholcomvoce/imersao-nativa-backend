@@ -46,7 +46,7 @@ const CARIB_SETTINGS = { stability: 0.60, similarity_boost: 0.80, style: 0.0, us
 const GUIDE_VOICES = {
   argentina:   { voice_id: '1WXz8v08ntDcSTeVXMN2', settings: SAFE_SETTINGS },  // Malena Tango — rioplatense, storyteller
   bolivia:     { voice_id: 'XB0fDUnXU5powFXDhCwa', settings: SAFE_SETTINGS },  // Lizy — colombiana (latina, não espanhola)
-  chile:       { voice_id: 'XB0fDUnXU5powFXDhCwa', settings: SAFE_SETTINGS },  // Lizy
+  chile:       { voice_id: 'Fd38GRHtJllY0CuguAy9', settings: SAFE_SETTINGS },  // Victoria — chilena
   colombia:    { voice_id: 'XB0fDUnXU5powFXDhCwa', settings: SAFE_SETTINGS },  // Lizy — colombiana nativa
   costarica:   { voice_id: 'cgSgspJ2msm6clMCkdW9', settings: SAFE_SETTINGS },  // Valentina
   cuba:        { voice_id: 'nPczCjzI2devNBz1zQrb', settings: CARIB_SETTINGS }, // Eleguar — caribeño
