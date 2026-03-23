@@ -31,7 +31,7 @@ if (!fs.existsSync(AUDITIVA_CACHE_DIR)) {
 // Objetivo: cada país soa autêntico com sotaque regional
 // ─────────────────────────────────────────────
 const NARRATOR_VOICE = {
-  voice_id: 'l1zE9xgNpUTaQCZzpNJa', // Alberto Rodríguez — serio, narrativo, latino
+  voice_id: 'CFNUvNr80GexCH1pyfTY', // Elomi — narrador
   settings: { stability: 0.65, similarity_boost: 0.75, style: 0.0, use_speaker_boost: true }
 };
 
