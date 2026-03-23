@@ -31,8 +31,8 @@ if (!fs.existsSync(AUDITIVA_CACHE_DIR)) {
 // Objetivo: cada país soa autêntico com sotaque regional
 // ─────────────────────────────────────────────
 const NARRATOR_VOICE = {
-  voice_id: 'CFNUvNr80GexCH1pyfTY', // Elomi — narrador
-  settings: { stability: 0.65, similarity_boost: 0.75, style: 0.0, use_speaker_boost: true }
+  voice_id: 'l1zE9xgNpUTaQCZzpNJa', // Alberto Rodríguez — Serious, Narrative (documental)
+  settings: { stability: 0.70, similarity_boost: 0.80, style: 0.0, use_speaker_boost: true }
 };
 
 // Guias locais — mapeados às vozes ElevenLabs disponíveis
@@ -112,7 +112,7 @@ router.get('/audio/:episodeId/:sectionIndex', authMiddleware, async (req, res) =
       `${ELEVENLABS_BASE}/text-to-speech/${voiceConfig.voice_id}`,
       {
         text: text.trim(),
-        model_id: 'eleven_multilingual_v2',
+        model_id: 'eleven_flash_v2_5',
         voice_settings: voiceConfig.settings
       },
       {
