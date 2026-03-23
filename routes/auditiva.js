@@ -37,27 +37,33 @@ const NARRATOR_VOICE = {
 
 // Guias locais — mapeados às vozes ElevenLabs disponíveis
 // Prioridade: sotaque regional > gênero > naturalidade
+// Todas as guias são latinas — NUNCA sotaque de España (exceto episódio España)
+// style: 0.0 em todas para evitar tom estranho
+// Valentina = mexicana, Lizy = colombiana, Eleguar = caribeño
+const SAFE_SETTINGS = { stability: 0.65, similarity_boost: 0.75, style: 0.0, use_speaker_boost: true };
+const CARIB_SETTINGS = { stability: 0.60, similarity_boost: 0.80, style: 0.0, use_speaker_boost: true };
+
 const GUIDE_VOICES = {
-  argentina:   { voice_id: 'cgSgspJ2msm6clMCkdW9', settings: { stability: 0.45, similarity_boost: 0.80, style: 0.30, use_speaker_boost: true } }, // Valentina — mexicana/neutra (ideal: clonar voz rioplatense)
-  bolivia:     { voice_id: 'pFZP5JQG7iQjIQuC4Bku', settings: { stability: 0.50, similarity_boost: 0.80, style: 0.15, use_speaker_boost: true } }, // Lina — neutra
-  chile:       { voice_id: 'pFZP5JQG7iQjIQuC4Bku', settings: { stability: 0.45, similarity_boost: 0.80, style: 0.25, use_speaker_boost: true } }, // Lina
-  colombia:    { voice_id: 'XB0fDUnXU5powFXDhCwa', settings: { stability: 0.45, similarity_boost: 0.85, style: 0.20, use_speaker_boost: true } }, // Lizy — colombiana
-  costarica:   { voice_id: 'cgSgspJ2msm6clMCkdW9', settings: { stability: 0.45, similarity_boost: 0.80, style: 0.25, use_speaker_boost: true } }, // Valentina
-  cuba:        { voice_id: 'nPczCjzI2devNBz1zQrb', settings: { stability: 0.40, similarity_boost: 0.85, style: 0.35, use_speaker_boost: true } }, // Eleguar — caribeño (cambiar a voz femenina cuando disponible)
-  ecuador:     { voice_id: 'pFZP5JQG7iQjIQuC4Bku', settings: { stability: 0.50, similarity_boost: 0.80, style: 0.15, use_speaker_boost: true } }, // Lina
-  elsalvador:  { voice_id: 'cgSgspJ2msm6clMCkdW9', settings: { stability: 0.45, similarity_boost: 0.80, style: 0.20, use_speaker_boost: true } }, // Valentina
-  espana:      { voice_id: 'iP95p4xoKVk53GoZ742B', settings: { stability: 0.50, similarity_boost: 0.80, style: 0.20, use_speaker_boost: true } }, // Mikel — España (cambiar a voz femenina)
-  guatemala:   { voice_id: 'cgSgspJ2msm6clMCkdW9', settings: { stability: 0.45, similarity_boost: 0.80, style: 0.20, use_speaker_boost: true } }, // Valentina
-  honduras:    { voice_id: 'cgSgspJ2msm6clMCkdW9', settings: { stability: 0.45, similarity_boost: 0.80, style: 0.20, use_speaker_boost: true } }, // Valentina
-  mexico:      { voice_id: 'cgSgspJ2msm6clMCkdW9', settings: { stability: 0.45, similarity_boost: 0.85, style: 0.30, use_speaker_boost: true } }, // Valentina — mexicana nativa
-  nicaragua:   { voice_id: 'cgSgspJ2msm6clMCkdW9', settings: { stability: 0.45, similarity_boost: 0.80, style: 0.20, use_speaker_boost: true } }, // Valentina
-  panama:      { voice_id: 'nPczCjzI2devNBz1zQrb', settings: { stability: 0.45, similarity_boost: 0.80, style: 0.25, use_speaker_boost: true } }, // Eleguar — caribeño
-  paraguay:    { voice_id: 'pFZP5JQG7iQjIQuC4Bku', settings: { stability: 0.50, similarity_boost: 0.80, style: 0.15, use_speaker_boost: true } }, // Lina
-  peru:        { voice_id: 'pFZP5JQG7iQjIQuC4Bku', settings: { stability: 0.50, similarity_boost: 0.80, style: 0.20, use_speaker_boost: true } }, // Lina
-  puertorico:  { voice_id: 'nPczCjzI2devNBz1zQrb', settings: { stability: 0.40, similarity_boost: 0.85, style: 0.35, use_speaker_boost: true } }, // Eleguar — caribeño
-  dominicana:  { voice_id: 'nPczCjzI2devNBz1zQrb', settings: { stability: 0.40, similarity_boost: 0.85, style: 0.35, use_speaker_boost: true } }, // Eleguar — caribeño
-  uruguay:     { voice_id: 'cgSgspJ2msm6clMCkdW9', settings: { stability: 0.45, similarity_boost: 0.80, style: 0.25, use_speaker_boost: true } }, // Valentina — rioplatense
-  venezuela:   { voice_id: 'nPczCjzI2devNBz1zQrb', settings: { stability: 0.42, similarity_boost: 0.85, style: 0.30, use_speaker_boost: true } }, // Eleguar — caribeño
+  argentina:   { voice_id: 'cgSgspJ2msm6clMCkdW9', settings: SAFE_SETTINGS },  // Valentina — mexicana (mais próximo de rioplatense disponível)
+  bolivia:     { voice_id: 'XB0fDUnXU5powFXDhCwa', settings: SAFE_SETTINGS },  // Lizy — colombiana (latina, não espanhola)
+  chile:       { voice_id: 'XB0fDUnXU5powFXDhCwa', settings: SAFE_SETTINGS },  // Lizy
+  colombia:    { voice_id: 'XB0fDUnXU5powFXDhCwa', settings: SAFE_SETTINGS },  // Lizy — colombiana nativa
+  costarica:   { voice_id: 'cgSgspJ2msm6clMCkdW9', settings: SAFE_SETTINGS },  // Valentina
+  cuba:        { voice_id: 'nPczCjzI2devNBz1zQrb', settings: CARIB_SETTINGS }, // Eleguar — caribeño
+  ecuador:     { voice_id: 'XB0fDUnXU5powFXDhCwa', settings: SAFE_SETTINGS },  // Lizy
+  elsalvador:  { voice_id: 'cgSgspJ2msm6clMCkdW9', settings: SAFE_SETTINGS },  // Valentina
+  espana:      { voice_id: 'iP95p4xoKVk53GoZ742B', settings: SAFE_SETTINGS },  // Mikel — España (único caso com sotaque espanhol)
+  guatemala:   { voice_id: 'cgSgspJ2msm6clMCkdW9', settings: SAFE_SETTINGS },  // Valentina
+  honduras:    { voice_id: 'cgSgspJ2msm6clMCkdW9', settings: SAFE_SETTINGS },  // Valentina
+  mexico:      { voice_id: 'cgSgspJ2msm6clMCkdW9', settings: SAFE_SETTINGS },  // Valentina — mexicana nativa
+  nicaragua:   { voice_id: 'cgSgspJ2msm6clMCkdW9', settings: SAFE_SETTINGS },  // Valentina
+  panama:      { voice_id: 'nPczCjzI2devNBz1zQrb', settings: CARIB_SETTINGS }, // Eleguar — caribeño
+  paraguay:    { voice_id: 'XB0fDUnXU5powFXDhCwa', settings: SAFE_SETTINGS },  // Lizy
+  peru:        { voice_id: 'XB0fDUnXU5powFXDhCwa', settings: SAFE_SETTINGS },  // Lizy
+  puertorico:  { voice_id: 'nPczCjzI2devNBz1zQrb', settings: CARIB_SETTINGS }, // Eleguar — caribeño
+  dominicana:  { voice_id: 'nPczCjzI2devNBz1zQrb', settings: CARIB_SETTINGS }, // Eleguar — caribeño
+  uruguay:     { voice_id: 'cgSgspJ2msm6clMCkdW9', settings: SAFE_SETTINGS },  // Valentina
+  venezuela:   { voice_id: 'nPczCjzI2devNBz1zQrb', settings: CARIB_SETTINGS }, // Eleguar — caribeño
 };
 
 // ─────────────────────────────────────────────
