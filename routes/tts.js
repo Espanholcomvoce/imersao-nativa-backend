@@ -208,8 +208,8 @@ router.get('/vocab', authMiddleware, async (req, res) => {
   }
 
   const cleanText = text.trim();
-  // v2 = nova versão conversacional da Valentina (muda o hash, invalida cache antigo)
-  const hash = crypto.createHash('md5').update(`valentina_v2:${cleanText}`).digest('hex');
+  // v3 = voz neutra sem estilo expressivo (corrige acento estranho do v2)
+  const hash = crypto.createHash('md5').update(`valentina_v3:${cleanText}`).digest('hex');
   const filePath = path.join(VOCAB_CACHE_DIR, `${hash}.mp3`);
 
   // Serve do cache em disco se já existe
@@ -221,7 +221,7 @@ router.get('/vocab', authMiddleware, async (req, res) => {
     return res.sendFile(filePath);
   }
 
-  // Gera com ElevenLabs
+  // Gera com ElevenLabs — voz clara, neutra, sem expressividade exagerada
   try {
     console.log(`[TTS-VOCAB] Gerando — ${cleanText.substring(0,50)}`);
 
@@ -231,9 +231,9 @@ router.get('/vocab', authMiddleware, async (req, res) => {
         text: cleanText,
         model_id: 'eleven_multilingual_v2',
         voice_settings: {
-          stability: 0.50,
-          similarity_boost: 0.85,
-          style: 0.25,
+          stability: 0.70,
+          similarity_boost: 0.75,
+          style: 0.0,
           use_speaker_boost: true
         }
       },
