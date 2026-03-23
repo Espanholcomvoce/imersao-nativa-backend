@@ -195,8 +195,8 @@ router.post('/', authMiddleware, async (req, res) => {
 // Voz fixa: Valentina (mexicana, feminina)
 // Não precisa de auth pois é recurso estático
 // ─────────────────────────────────────────────
-// Lina — voz feminina neutra, clara e profissional (ideal para vocabulário)
-const VOCAB_VOICE_ID = 'pFZP5JQG7iQjIQuC4Bku';
+// Alejandro — voz masculina mexicana, neutra e clara (latino-americano, não espanhol)
+const VOCAB_VOICE_ID = 'pqHfZKP75CvOlQylNhV4';
 
 router.get('/vocab', authMiddleware, async (req, res) => {
   const { text, type = 'word' } = req.query;
@@ -209,8 +209,8 @@ router.get('/vocab', authMiddleware, async (req, res) => {
   }
 
   const cleanText = text.trim();
-  // v4 = Lina neutra (substitui Valentina que soava estranha)
-  const hash = crypto.createHash('md5').update(`lina_v4:${cleanText}`).digest('hex');
+  // v5 = Alejandro mexicano neutro (Lina era espanhola, Valentina soava estranha)
+  const hash = crypto.createHash('md5').update(`alejandro_v5:${cleanText}`).digest('hex');
   const filePath = path.join(VOCAB_CACHE_DIR, `${hash}.mp3`);
 
   // Serve do cache em disco se já existe
