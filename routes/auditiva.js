@@ -60,7 +60,7 @@ const GUIDE_VOICES = {
   panama:      { voice_id: 'nPczCjzI2devNBz1zQrb', settings: CARIB_SETTINGS }, // Eleguar — caribeño
   paraguay:    { voice_id: 'XB0fDUnXU5powFXDhCwa', settings: SAFE_SETTINGS },  // Lizy
   peru:        { voice_id: 'WrKMouCyVAmTemNLZkOw', settings: SAFE_SETTINGS },  // Emilia — peruana calma
-  puertorico:  { voice_id: 'nPczCjzI2devNBz1zQrb', settings: CARIB_SETTINGS }, // Eleguar — caribeño
+  puertorico:  { voice_id: 'ISTw2UT8hNs80bzKPenA', settings: CARIB_SETTINGS }, // Leo — puertorriqueño
   dominicana:  { voice_id: '2vyVHGyPYK7eCnfdVvk9', settings: CARIB_SETTINGS }, // dominicana
   uruguay:     { voice_id: '1WXz8v08ntDcSTeVXMN2', settings: SAFE_SETTINGS },  // Malena Tango — rioplatense
   venezuela:   { voice_id: 'Aoh8oiCIlPke1wFxeNuK', settings: CARIB_SETTINGS }, // David — venezolano conversacional
