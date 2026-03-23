@@ -195,7 +195,8 @@ router.post('/', authMiddleware, async (req, res) => {
 // Voz fixa: Valentina (mexicana, feminina)
 // Não precisa de auth pois é recurso estático
 // ─────────────────────────────────────────────
-const VALENTINA_ID = 'cgSgspJ2msm6clMCkdW9';
+// Lina — voz feminina neutra, clara e profissional (ideal para vocabulário)
+const VOCAB_VOICE_ID = 'pFZP5JQG7iQjIQuC4Bku';
 
 router.get('/vocab', authMiddleware, async (req, res) => {
   const { text, type = 'word' } = req.query;
@@ -208,8 +209,8 @@ router.get('/vocab', authMiddleware, async (req, res) => {
   }
 
   const cleanText = text.trim();
-  // v3 = voz neutra sem estilo expressivo (corrige acento estranho do v2)
-  const hash = crypto.createHash('md5').update(`valentina_v3:${cleanText}`).digest('hex');
+  // v4 = Lina neutra (substitui Valentina que soava estranha)
+  const hash = crypto.createHash('md5').update(`lina_v4:${cleanText}`).digest('hex');
   const filePath = path.join(VOCAB_CACHE_DIR, `${hash}.mp3`);
 
   // Serve do cache em disco se já existe
@@ -226,7 +227,7 @@ router.get('/vocab', authMiddleware, async (req, res) => {
     console.log(`[TTS-VOCAB] Gerando — ${cleanText.substring(0,50)}`);
 
     const response = await axios.post(
-      `${ELEVENLABS_BASE}/text-to-speech/${VALENTINA_ID}`,
+      `${ELEVENLABS_BASE}/text-to-speech/${VOCAB_VOICE_ID}`,
       {
         text: cleanText,
         model_id: 'eleven_multilingual_v2',
