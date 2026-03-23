@@ -49,7 +49,7 @@ const GUIDE_VOICES = {
   chile:       { voice_id: 'Fd38GRHtJllY0CuguAy9', settings: SAFE_SETTINGS },  // Victoria — chilena
   colombia:    { voice_id: 'MqSrMUk8EHh32HBKytrG', settings: SAFE_SETTINGS },  // Jessica — colombiana natural
   costarica:   { voice_id: 'cgSgspJ2msm6clMCkdW9', settings: SAFE_SETTINGS },  // Valentina
-  cuba:        { voice_id: 'nPczCjzI2devNBz1zQrb', settings: CARIB_SETTINGS }, // Eleguar — caribeño
+  cuba:        { voice_id: '1hB7zCGWj11SeMuBseeI', settings: CARIB_SETTINGS }, // Yasser — cubano
   ecuador:     { voice_id: 'DZksvRcjbVkbnIwYVMEQ', settings: SAFE_SETTINGS },  // Esaú — ecuatoriano cálido
   elsalvador:  { voice_id: 'cgSgspJ2msm6clMCkdW9', settings: SAFE_SETTINGS },  // Valentina
   espana:      { voice_id: 'iP95p4xoKVk53GoZ742B', settings: SAFE_SETTINGS },  // Mikel — España (único caso com sotaque espanhol)
