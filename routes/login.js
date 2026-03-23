@@ -1,7 +1,10 @@
 /**
  * IMERSÃO NATIVA - Rota de Login
- * Valida email via OAuth Hotmart (compra única)
- * 
+ * Valida email via OAuth Hotmart (compra + assinatura ativa)
+ *
+ * FILTRO 1: Compra realizada (Sales API)
+ * FILTRO 2: Assinatura ativa na área de membros (Subscriptions API)
+ *
  * POST /api/login        → faz login
  * GET  /api/login/verify → verifica se o token ainda é válido
  */
@@ -119,8 +122,9 @@ async function validateHotmart(email) {
     });
 
     // Verifica se tem registro com BUYER no array users e transação válida
-    const hasAccess = items.some(item => {
-      const hasBuyer = (item.users || []).some(u => 
+    // FILTRO 1: Verificar compra
+    const hasPurchase = items.some(item => {
+      const hasBuyer = (item.users || []).some(u =>
         (u.role || '').toUpperCase() === 'BUYER' &&
         (u.user?.email || '').toLowerCase() === email.toLowerCase()
       );
@@ -128,9 +132,18 @@ async function validateHotmart(email) {
       return hasBuyer && !!item.transaction;
     });
 
-    setCache(email, hasAccess);
-    console.log(`[LOGIN] Hotmart para ${email}: ${hasAccess ? '✅ acesso aprovado' : '❌ sem compra válida'} (${items.length} registros)`);
-    return hasAccess;
+    if (!hasPurchase) {
+      setCache(email, false);
+      console.log(`[LOGIN] ❌ Sem compra válida para ${email}`);
+      return false;
+    }
+
+    // FILTRO 2: Verificar assinatura ativa na área de membros
+    const isActive = await checkSubscriptionActive(token, email);
+
+    setCache(email, isActive);
+    console.log(`[LOGIN] Hotmart para ${email}: ${isActive ? '✅ compra + assinatura ativa' : '❌ compra OK mas assinatura inativa'}`);
+    return isActive;
 
   } catch (err) {
     const status = err.response?.status;
@@ -141,8 +154,50 @@ async function validateHotmart(email) {
       throw new Error('Erro de configuração do sistema. Contate o suporte.');
     }
 
-    // Hotmart fora do ar — permite temporariamente para não bloquear alunos
-    console.warn(`[LOGIN] Hotmart indisponível — permitindo acesso temporário para ${email}`);
+    // Hotmart fora do ar — nega acesso por segurança, com mensagem amigável
+    console.warn(`[LOGIN] Hotmart indisponível — negando acesso por segurança para ${email}`);
+    throw new Error('Sistema temporariamente indisponível. Tente novamente em alguns minutos.');
+  }
+}
+
+// ─────────────────────────────────────────────
+// Verifica se email tem assinatura ATIVA
+// (Subscriptions API — área de membros Hotmart)
+// ─────────────────────────────────────────────
+async function checkSubscriptionActive(hotmartToken, email) {
+  try {
+    const response = await axios.get(
+      'https://developers.hotmart.com/payments/api/v1/subscriptions',
+      {
+        headers: {
+          'Authorization': `Bearer ${hotmartToken}`,
+          'Content-Type': 'application/json'
+        },
+        params: {
+          subscriber_email: email,
+          product_id: HOTMART_PRODUCT_ID,
+          status: 'ACTIVE'
+        },
+        timeout: 10000
+      }
+    );
+
+    const subs = response.data?.items || [];
+    const hasActiveSub = subs.length > 0;
+    console.log(`[LOGIN] Assinaturas ativas para ${email}: ${subs.length}`);
+    return hasActiveSub;
+
+  } catch (err) {
+    // Se a API de subscriptions falhar mas a compra foi confirmada,
+    // pode ser produto de compra única (não recorrente) — permitir acesso
+    const status = err.response?.status;
+    if (status === 404 || status === 400) {
+      // Produto pode ser compra única sem subscription — compra já validada acima
+      console.log(`[LOGIN] Produto sem modelo de assinatura para ${email} — acesso via compra única`);
+      return true;
+    }
+    console.error(`[LOGIN] Erro ao verificar assinatura (${status}):`, err.message);
+    // Em caso de erro na API de subscriptions, confiar na compra já validada
     return true;
   }
 }
@@ -170,8 +225,8 @@ router.post('/', async (req, res) => {
 
     if (!hasAccess) {
       return res.status(403).json({
-        error: 'Acesso não encontrado. Verifique se você adquiriu o Programa Imersão Nativa.',
-        action: 'Acesse o Hotmart para verificar sua compra ou entre em contato com o suporte.'
+        error: 'Acesso não autorizado. Verifique se você adquiriu o Programa Imersão Nativa e se sua assinatura está ativa.',
+        action: 'Acesse a área de membros da Hotmart para verificar seu status ou entre em contato com o suporte.'
       });
     }
 

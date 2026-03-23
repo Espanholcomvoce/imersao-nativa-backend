@@ -101,7 +101,7 @@ app.use('/api/chat', require('./routes/chat'));
 app.use('/api/tts', ttsLimiter, require('./routes/tts'));
 app.use('/api/realtime', require('./routes/realtime-conversation'));
 app.use('/api/conversa', require('./routes/conversa'));
-app.use('/api/conversa', require('./routes/conversa'));
+app.use('/api/auditiva', require('./routes/auditiva'));
 app.use('/api/exam-audio', require('./routes/exam-audio'));
 
 app.use((err, req, res, next) => {
