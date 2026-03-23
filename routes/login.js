@@ -183,9 +183,16 @@ async function checkSubscriptionActive(hotmartToken, email) {
     );
 
     const subs = response.data?.items || [];
-    const hasActiveSub = subs.length > 0;
     console.log(`[LOGIN] Assinaturas ativas para ${email}: ${subs.length}`);
-    return hasActiveSub;
+
+    if (subs.length > 0) {
+      return true; // Tem assinatura ativa
+    }
+
+    // Se não tem assinatura, pode ser compra única — permitir acesso
+    // (a compra já foi validada no Filtro 1)
+    console.log(`[LOGIN] Sem assinatura recorrente para ${email} — acesso via compra única já validada`);
+    return true;
 
   } catch (err) {
     // Se a API de subscriptions falhar mas a compra foi confirmada,
