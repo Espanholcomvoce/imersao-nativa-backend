@@ -287,4 +287,24 @@ router.get('/voices', authMiddleware, (req, res) => {
   res.json({ voices: voiceList });
 });
 
+// ─────────────────────────────────────────────
+// DELETE /api/tts/cache
+// Limpa todo o cache de áudio de vocabulário
+// ─────────────────────────────────────────────
+router.delete('/cache', authMiddleware, (req, res) => {
+  try {
+    const files = fs.readdirSync(VOCAB_CACHE_DIR);
+    let deleted = 0;
+    files.forEach(f => {
+      try { fs.unlinkSync(path.join(VOCAB_CACHE_DIR, f)); deleted++; } catch(e) {}
+    });
+    // Limpar cache em memória também
+    audioCache.clear();
+    console.log(`[TTS] Cache limpo: ${deleted} arquivos deletados`);
+    res.json({ ok: true, deleted });
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 module.exports = router;
