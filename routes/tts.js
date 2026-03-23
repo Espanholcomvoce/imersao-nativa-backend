@@ -31,41 +31,47 @@ const ELEVENLABS_BASE = 'https://api.elevenlabs.io/v1';
 // Mapeamento nome → voice_id do ElevenLabs
 // ─────────────────────────────────────────────
 const VOICES = {
+  Cristina: {
+    voice_id: 'nTkjq09AuYgsNR8E4sDe',
+    idioma: 'Español latino',
+    genero: 'mujer',
+    descricao: 'Natural conversacional, ideal para Sombreado/SRE'
+  },
+  Maya: {
+    voice_id: 'nbcvT3C2tyOd2OsRAtUf',
+    idioma: 'Español latino',
+    genero: 'mujer',
+    descricao: 'Dinámica, agente conversacional, ideal para Paula'
+  },
   Valentina: {
     voice_id: 'cgSgspJ2msm6clMCkdW9',
     idioma: 'Español mexicano',
     genero: 'mujer',
-    descricao: 'Cálida, natural, perfecta para conversaciones'
+    descricao: 'Cálida, natural, guía cultural'
   },
   Alejandro: {
     voice_id: 'pqHfZKP75CvOlQylNhV4',
     idioma: 'Español mexicano',
     genero: 'hombre',
-    descricao: 'Neutral, profesional, clara dicción'
+    descricao: 'Neutral, profesional, narrador'
   },
   Lizy: {
     voice_id: 'XB0fDUnXU5powFXDhCwa',
     idioma: 'Español colombiano',
     genero: 'mujer',
-    descricao: 'Profesional, clara, autoridad'
+    descricao: 'Profesional, clara, guía colombiana'
   },
   Mikel: {
     voice_id: 'iP95p4xoKVk53GoZ742B',
     idioma: 'Español (España)',
     genero: 'hombre',
-    descricao: 'Maduro, formal, distintivo'
-  },
-  Lina: {
-    voice_id: 'pFZP5JQG7iQjIQuC4Bku',
-    idioma: 'Español neutro',
-    genero: 'mujer',
-    descricao: 'Clara, versátil, agradable'
+    descricao: 'Maduro, formal, solo para España'
   },
   Eleguar: {
     voice_id: 'nPczCjzI2devNBz1zQrb',
     idioma: 'Español caribeño',
     genero: 'hombre',
-    descricao: 'Expresivo, cálido, natural'
+    descricao: 'Expresivo, cálido, guía caribeño'
   }
 };
 
@@ -103,7 +109,7 @@ function saveToCache(key, buffer) {
 // Retorna: audio/mpeg (binário)
 // ─────────────────────────────────────────────
 router.post('/', authMiddleware, async (req, res) => {
-  const { text, voice = 'Alejandro', voice_id } = req.body;
+  const { text, voice = 'Maya', voice_id } = req.body;
 
   // Validações
   if (!text || text.trim().length === 0) {
@@ -114,11 +120,11 @@ router.post('/', authMiddleware, async (req, res) => {
   }
 
   // Resolve qual voice_id usar
-  // Prioridade: voice_id explícito → nome da voz → Alejandro como fallback
+  // Prioridade: voice_id explícito → nome da voz → Maya como fallback
   let resolvedVoiceId = voice_id;
   if (!resolvedVoiceId) {
     const voiceData = VOICES[voice];
-    resolvedVoiceId = voiceData ? voiceData.voice_id : VOICES.Alejandro.voice_id;
+    resolvedVoiceId = voiceData ? voiceData.voice_id : VOICES.Maya.voice_id;
   }
 
   const cleanText = text.trim();
@@ -195,8 +201,8 @@ router.post('/', authMiddleware, async (req, res) => {
 // Voz fixa: Valentina (mexicana, feminina)
 // Não precisa de auth pois é recurso estático
 // ─────────────────────────────────────────────
-// Alejandro — voz masculina mexicana, neutra e clara (latino-americano, não espanhol)
-const VOCAB_VOICE_ID = 'pqHfZKP75CvOlQylNhV4';
+// Cristina Campos — voz feminina natural conversacional (para Sombreado/SRE)
+const VOCAB_VOICE_ID = 'nTkjq09AuYgsNR8E4sDe';
 
 router.get('/vocab', authMiddleware, async (req, res) => {
   const { text, type = 'word' } = req.query;
@@ -209,8 +215,8 @@ router.get('/vocab', authMiddleware, async (req, res) => {
   }
 
   const cleanText = text.trim();
-  // v5 = Alejandro mexicano neutro (Lina era espanhola, Valentina soava estranha)
-  const hash = crypto.createHash('md5').update(`alejandro_v5:${cleanText}`).digest('hex');
+  // v6 = Cristina Campos conversacional
+  const hash = crypto.createHash('md5').update(`cristina_v6:${cleanText}`).digest('hex');
   const filePath = path.join(VOCAB_CACHE_DIR, `${hash}.mp3`);
 
   // Serve do cache em disco se já existe
