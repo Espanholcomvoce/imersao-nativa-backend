@@ -1,12 +1,14 @@
 /**
  * IMERSÃO NATIVA - Rota de Login
- * Valida email via OAuth Hotmart (compra + assinatura ativa)
+ * Valida email via OAuth Hotmart (dupla verificação)
  *
- * FILTRO 1: Compra realizada (Sales API)
- * FILTRO 2: Assinatura ativa na área de membros (Subscriptions API)
+ * FILTRO 1: Compra aprovada (Sales API) — status APPROVED/COMPLETE
+ *           Bloqueia se REFUNDED/CANCELLED/CHARGEBACK
+ * FILTRO 2: Membro ATIVO na área de membros (Subscriptions API)
+ *           Bloqueia se inativo/cancelado
  *
- * POST /api/login        → faz login
- * GET  /api/login/verify → verifica se o token ainda é válido
+ * POST /api/login        → faz login (valida ambos filtros)
+ * GET  /api/login/verify → RE-VALIDA ambos filtros a cada abertura do app
  */
 
 const express = require('express');
@@ -16,7 +18,7 @@ const axios = require('axios');
 const { authMiddleware } = require('../middleware/auth');
 
 const JWT_SECRET = process.env.JWT_SECRET;
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '24h';
 const HOTMART_CLIENT_ID = process.env.HOTMART_CLIENT_ID;
 const HOTMART_CLIENT_SECRET = process.env.HOTMART_CLIENT_SECRET;
 const HOTMART_BASIC = process.env.HOTMART_BASIC;
@@ -24,14 +26,16 @@ const HOTMART_PRODUCT_ID = process.env.HOTMART_PRODUCT_ID;
 
 // ─────────────────────────────────────────────
 // Cache em memória — evita chamar Hotmart toda vez
+// TTL curto para verify (2 min) e normal para login (10 min)
 // ─────────────────────────────────────────────
 const accessCache = new Map();
-const CACHE_TTL = 10 * 60 * 1000; // 10 minutos
+const CACHE_TTL_LOGIN = 10 * 60 * 1000;  // 10 minutos (login)
+const CACHE_TTL_VERIFY = 2 * 60 * 1000;  // 2 minutos (verify — checa mais frequente)
 
-function getCached(email) {
+function getCached(email, ttl = CACHE_TTL_LOGIN) {
   const entry = accessCache.get(email);
   if (!entry) return null;
-  if (Date.now() - entry.timestamp > CACHE_TTL) {
+  if (Date.now() - entry.timestamp > ttl) {
     accessCache.delete(email);
     return null;
   }
@@ -74,12 +78,18 @@ async function getHotmartToken() {
   return hotmartTokenCache.token;
 }
 
+// Status Hotmart que indicam acesso válido (compra única)
+const VALID_PURCHASE_STATUSES = ['APPROVED', 'COMPLETE', 'COMPLETED'];
+// Status que indicam reembolso/cancelamento
+const BLOCKED_STATUSES = ['REFUNDED', 'CANCELLED', 'CHARGEBACK', 'EXPIRED', 'DELAYED'];
+
 // ─────────────────────────────────────────────
 // Valida se email tem compra aprovada no Hotmart
+// cacheTTL permite usar cache mais curto no verify
 // ─────────────────────────────────────────────
-async function validateHotmart(email) {
+async function validateHotmart(email, cacheTTL = CACHE_TTL_LOGIN) {
   // 1. Verifica cache
-  const cached = getCached(email);
+  const cached = getCached(email, cacheTTL);
   if (cached !== null) {
     console.log(`[LOGIN] Cache hit para ${email}: ${cached}`);
     return cached;
@@ -95,7 +105,7 @@ async function validateHotmart(email) {
     }
   }
 
-  // 3. Consulta API Hotmart
+  // 3. Consulta API Hotmart — Sales
   try {
     const token = await getHotmartToken();
 
@@ -116,55 +126,66 @@ async function validateHotmart(email) {
 
     const items = response.data?.items || [];
     console.log(`[LOGIN] Total registros para ${email}: ${items.length}`);
-    // Loga TUDO para ver a estrutura completa
-    items.forEach((item, i) => {
-      console.log(`[LOGIN] Item ${i}:`, JSON.stringify(item));
-    });
 
-    // Verifica se tem registro com BUYER no array users e transação válida
-    // FILTRO 1: Verificar compra
-    const hasPurchase = items.some(item => {
+    // Verifica se tem compra APROVADA (não reembolsada)
+    const hasValidPurchase = items.some(item => {
       const hasBuyer = (item.users || []).some(u =>
         (u.role || '').toUpperCase() === 'BUYER' &&
         (u.user?.email || '').toLowerCase() === email.toLowerCase()
       );
-      console.log(`[LOGIN] transaction: "${item.transaction || 'N/A'}", hasBuyer: ${hasBuyer}`);
-      return hasBuyer && !!item.transaction;
+
+      // Verificar status da compra (purchase.status)
+      const purchaseStatus = (item.purchase?.status || '').toUpperCase();
+      const isValid = VALID_PURCHASE_STATUSES.includes(purchaseStatus);
+      const isBlocked = BLOCKED_STATUSES.includes(purchaseStatus);
+
+      console.log(`[LOGIN] transaction: "${item.transaction || 'N/A'}", status: "${purchaseStatus}", hasBuyer: ${hasBuyer}, valid: ${isValid}, blocked: ${isBlocked}`);
+
+      return hasBuyer && !!item.transaction && isValid && !isBlocked;
     });
 
-    if (!hasPurchase) {
+    // Verificar se alguma compra foi reembolsada (para log)
+    const hasRefund = items.some(item => {
+      const status = (item.purchase?.status || '').toUpperCase();
+      return BLOCKED_STATUSES.includes(status);
+    });
+
+    if (hasRefund && !hasValidPurchase) {
+      console.log(`[LOGIN] ❌ Compra REEMBOLSADA/CANCELADA para ${email}`);
+    }
+
+    if (!hasValidPurchase) {
       setCache(email, false);
       console.log(`[LOGIN] ❌ Sem compra válida para ${email}`);
       return false;
     }
 
-    // FILTRO 2: Verificar assinatura ativa na área de membros
-    const isActive = await checkSubscriptionActive(token, email);
+    // FILTRO 2: Verificar se está ATIVO na área de membros Hotmart
+    const isActive = await checkMemberActive(token, email);
 
-    setCache(email, isActive);
-    console.log(`[LOGIN] Hotmart para ${email}: ${isActive ? '✅ compra + assinatura ativa' : '❌ compra OK mas assinatura inativa'}`);
-    return isActive;
+    const finalAccess = hasValidPurchase && isActive;
+    setCache(email, finalAccess);
+    console.log(`[LOGIN] Hotmart para ${email}: ${finalAccess ? '✅ compra válida + membro ativo' : '❌ compra OK mas membro INATIVO'}`);
+    return finalAccess;
 
   } catch (err) {
     const status = err.response?.status;
     console.error(`[LOGIN] Erro Hotmart (${status}):`, err.message);
 
-    // Credenciais inválidas — não deixa passar
     if (status === 401 || status === 403) {
       throw new Error('Erro de configuração do sistema. Contate o suporte.');
     }
 
-    // Hotmart fora do ar — nega acesso por segurança, com mensagem amigável
     console.warn(`[LOGIN] Hotmart indisponível — negando acesso por segurança para ${email}`);
     throw new Error('Sistema temporariamente indisponível. Tente novamente em alguns minutos.');
   }
 }
 
 // ─────────────────────────────────────────────
-// Verifica se email tem assinatura ATIVA
-// (Subscriptions API — área de membros Hotmart)
+// FILTRO 2: Verifica se membro está ATIVO na Hotmart
+// Retorna false se inativo/cancelado (NÃO mais "return true" como fallback)
 // ─────────────────────────────────────────────
-async function checkSubscriptionActive(hotmartToken, email) {
+async function checkMemberActive(hotmartToken, email) {
   try {
     const response = await axios.get(
       'https://developers.hotmart.com/payments/api/v1/subscriptions',
@@ -183,29 +204,28 @@ async function checkSubscriptionActive(hotmartToken, email) {
     );
 
     const subs = response.data?.items || [];
-    console.log(`[LOGIN] Assinaturas ativas para ${email}: ${subs.length}`);
+    console.log(`[LOGIN] Membros ativos para ${email}: ${subs.length}`);
 
     if (subs.length > 0) {
-      return true; // Tem assinatura ativa
+      return true; // Membro ativo
     }
 
-    // Se não tem assinatura, pode ser compra única — permitir acesso
-    // (a compra já foi validada no Filtro 1)
-    console.log(`[LOGIN] Sem assinatura recorrente para ${email} — acesso via compra única já validada`);
-    return true;
+    // Sem membro ativo — bloquear acesso
+    console.log(`[LOGIN] ❌ Membro INATIVO para ${email} — acesso bloqueado`);
+    return false;
 
   } catch (err) {
-    // Se a API de subscriptions falhar mas a compra foi confirmada,
-    // pode ser produto de compra única (não recorrente) — permitir acesso
     const status = err.response?.status;
-    if (status === 404 || status === 400) {
-      // Produto pode ser compra única sem subscription — compra já validada acima
-      console.log(`[LOGIN] Produto sem modelo de assinatura para ${email} — acesso via compra única`);
+
+    // 404 = produto sem modelo de assinatura (improvável, mas possível)
+    if (status === 404) {
+      console.log(`[LOGIN] Produto sem modelo de membros para ${email} — permitindo via compra`);
       return true;
     }
-    console.error(`[LOGIN] Erro ao verificar assinatura (${status}):`, err.message);
-    // Em caso de erro na API de subscriptions, confiar na compra já validada
-    return true;
+
+    // Qualquer outro erro — negar por segurança
+    console.error(`[LOGIN] Erro ao verificar membro ativo (${status}):`, err.message);
+    throw new Error('Erro ao verificar status de membro. Tente novamente.');
   }
 }
 
@@ -261,13 +281,41 @@ router.post('/', async (req, res) => {
 // ─────────────────────────────────────────────
 // GET /api/login/verify
 // Header: Authorization: Bearer <token>
+// RE-VALIDA acesso no Hotmart a cada abertura do app
+// Se aluno pediu reembolso, bloqueia imediatamente
 // ─────────────────────────────────────────────
-router.get('/verify', authMiddleware, (req, res) => {
-  res.json({
-    valid: true,
-    email: req.user.email,
-    expires_at: new Date(req.user.exp * 1000).toISOString()
-  });
+router.get('/verify', authMiddleware, async (req, res) => {
+  const email = req.user.email;
+
+  try {
+    // Re-validar no Hotmart (cache curto de 2 min)
+    const hasAccess = await validateHotmart(email, CACHE_TTL_VERIFY);
+
+    if (!hasAccess) {
+      console.log(`[VERIFY] ❌ Acesso revogado para ${email} — compra reembolsada/cancelada`);
+      return res.status(403).json({
+        valid: false,
+        error: 'Seu acesso foi encerrado. Verifique o status da sua compra na Hotmart.',
+        code: 'ACCESS_REVOKED'
+      });
+    }
+
+    console.log(`[VERIFY] ✅ Acesso confirmado para ${email}`);
+    res.json({
+      valid: true,
+      email,
+      expires_at: new Date(req.user.exp * 1000).toISOString()
+    });
+
+  } catch (err) {
+    // Se Hotmart está fora do ar, permite acesso temporário (JWT já validado)
+    console.warn(`[VERIFY] Hotmart indisponível para ${email} — permitindo acesso via JWT`);
+    res.json({
+      valid: true,
+      email,
+      expires_at: new Date(req.user.exp * 1000).toISOString()
+    });
+  }
 });
 
 module.exports = router;
