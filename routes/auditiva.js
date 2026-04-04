@@ -122,7 +122,7 @@ router.get('/audio/:episodeId/:sectionIndex', authMiddleware, async (req, res) =
           'Content-Type': 'application/json'
         },
         responseType: 'arraybuffer',
-        timeout: 60000 // 60s para textos longos
+        timeout: 90000 // 90s para primera generação (ElevenLabs pode demorar)
       }
     );
 
