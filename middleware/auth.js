@@ -36,6 +36,17 @@ function authMiddleware(req, res, next) {
 
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
+
+    // Rejeitar tokens emitidos há mais de 30 minutos (mesmo que exp original seja maior)
+    const MAX_TOKEN_AGE = 30 * 60; // 30 minutos em segundos
+    const tokenAge = Math.floor(Date.now() / 1000) - decoded.iat;
+    if (tokenAge > MAX_TOKEN_AGE) {
+      return res.status(401).json({
+        error: 'Sessão expirada. Faça login novamente.',
+        code: 'TOKEN_EXPIRED'
+      });
+    }
+
     req.user = decoded; // { email, iat, exp }
     next();
   } catch (err) {
