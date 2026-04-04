@@ -18,7 +18,7 @@ const axios = require('axios');
 const { authMiddleware } = require('../middleware/auth');
 
 const JWT_SECRET = process.env.JWT_SECRET;
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '4h';
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '30m';
 const HOTMART_CLIENT_ID = process.env.HOTMART_CLIENT_ID;
 const HOTMART_CLIENT_SECRET = process.env.HOTMART_CLIENT_SECRET;
 const HOTMART_BASIC = process.env.HOTMART_BASIC;
