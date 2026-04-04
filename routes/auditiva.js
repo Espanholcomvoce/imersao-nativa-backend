@@ -1,112 +1,132 @@
 /**
- * IMERSÃO CULTURAL E AUDITIVA - Áudio on-demand + cache
+ * IMERSAO CULTURAL E AUDITIVA - Audio on-demand + cache R2
  *
- * GET  /api/auditiva/audio/:episodeId/:sectionIndex  → Gera/serve áudio de uma seção
- * GET  /api/auditiva/episodes/:countryCode            → Lista episódios de um país
- * GET  /api/auditiva/countries                         → Lista países disponíveis
+ * GET  /api/auditiva/audio/:episodeId/:sectionIndex
  *
- * Áudio gerado na primeira vez via ElevenLabs, salvo em disco para reproduções futuras.
- * Cada país tem voz local + narrador neutro latinoamericano.
+ * Audio gerado na primeira vez via ElevenLabs, salvo em Cloudflare R2 (permanente).
  */
 
 const express = require('express');
 const router = express.Router();
 const axios = require('axios');
-const crypto = require('crypto');
-const fs = require('fs');
-const path = require('path');
+const { S3Client, GetObjectCommand, PutObjectCommand } = require('@aws-sdk/client-s3');
 const { authMiddleware } = require('../middleware/auth');
 
 const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY;
 const ELEVENLABS_BASE = 'https://api.elevenlabs.io/v1';
 
-// Cache em disco — persiste entre deploys no Railway (/tmp)
-const AUDITIVA_CACHE_DIR = path.join('/tmp', 'auditiva-audio');
-if (!fs.existsSync(AUDITIVA_CACHE_DIR)) {
-  fs.mkdirSync(AUDITIVA_CACHE_DIR, { recursive: true });
+// ─── Cloudflare R2 (S3-compatible) — cache permanente ───
+const R2_ACCOUNT_ID = process.env.R2_ACCOUNT_ID;
+const R2_ACCESS_KEY_ID = process.env.R2_ACCESS_KEY_ID;
+const R2_SECRET_ACCESS_KEY = process.env.R2_SECRET_ACCESS_KEY;
+const R2_BUCKET = process.env.R2_BUCKET || 'imersao-nativa-audio';
+
+let r2Client = null;
+if (R2_ACCOUNT_ID && R2_ACCESS_KEY_ID && R2_SECRET_ACCESS_KEY) {
+  r2Client = new S3Client({
+    region: 'auto',
+    endpoint: `https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+    credentials: {
+      accessKeyId: R2_ACCESS_KEY_ID,
+      secretAccessKey: R2_SECRET_ACCESS_KEY,
+    },
+  });
+  console.log('[AUDITIVA] R2 configurado — cache permanente ativo');
+} else {
+  console.warn('[AUDITIVA] R2 nao configurado — audio nao sera salvo permanentemente');
 }
 
-// ─────────────────────────────────────────────
-// VOZES POR PAÍS — narrador neutro + guia local
-// Objetivo: cada país soa autêntico com sotaque regional
-// ─────────────────────────────────────────────
+async function r2Get(key) {
+  if (!r2Client) return null;
+  try {
+    const resp = await r2Client.send(new GetObjectCommand({ Bucket: R2_BUCKET, Key: key }));
+    const chunks = [];
+    for await (const chunk of resp.Body) { chunks.push(chunk); }
+    return Buffer.concat(chunks);
+  } catch { return null; }
+}
+
+async function r2Put(key, buffer) {
+  if (!r2Client) return false;
+  try {
+    await r2Client.send(new PutObjectCommand({
+      Bucket: R2_BUCKET, Key: key, Body: buffer, ContentType: 'audio/mpeg',
+    }));
+    return true;
+  } catch (err) {
+    console.error('[AUDITIVA] Erro ao salvar no R2:', err.message);
+    return false;
+  }
+}
+
+// ─── VOZES POR PAIS ───
 const NARRATOR_VOICE = {
-  voice_id: 'l1zE9xgNpUTaQCZzpNJa', // Alberto Rodríguez — Serious, Narrative (documental)
+  voice_id: 'l1zE9xgNpUTaQCZzpNJa',
   settings: { stability: 0.70, similarity_boost: 0.80, style: 0.0, use_speaker_boost: true }
 };
 
-// Guias locais — mapeados às vozes ElevenLabs disponíveis
-// Prioridade: sotaque regional > gênero > naturalidade
-// Todas as guias são latinas — NUNCA sotaque de España (exceto episódio España)
-// style: 0.0 em todas para evitar tom estranho
-// Valentina = mexicana, Lizy = colombiana, Eleguar = caribeño
-const SAFE_SETTINGS = { stability: 0.65, similarity_boost: 0.75, style: 0.0, use_speaker_boost: true };
-const CARIB_SETTINGS = { stability: 0.60, similarity_boost: 0.80, style: 0.0, use_speaker_boost: true };
+const SAFE = { stability: 0.65, similarity_boost: 0.75, style: 0.0, use_speaker_boost: true };
+const CARIB = { stability: 0.60, similarity_boost: 0.80, style: 0.0, use_speaker_boost: true };
 
 const GUIDE_VOICES = {
-  argentina:   { voice_id: '1WXz8v08ntDcSTeVXMN2', settings: SAFE_SETTINGS },  // Malena Tango — rioplatense, storyteller
-  bolivia:     { voice_id: 'XB0fDUnXU5powFXDhCwa', settings: SAFE_SETTINGS },  // Lizy — colombiana (latina, não espanhola)
-  chile:       { voice_id: 'Fd38GRHtJllY0CuguAy9', settings: SAFE_SETTINGS },  // Victoria — chilena
-  colombia:    { voice_id: 'MqSrMUk8EHh32HBKytrG', settings: SAFE_SETTINGS },  // Jessica — colombiana natural
-  costarica:   { voice_id: 'cgSgspJ2msm6clMCkdW9', settings: SAFE_SETTINGS },  // Valentina
-  cuba:        { voice_id: '1hB7zCGWj11SeMuBseeI', settings: CARIB_SETTINGS }, // Yasser — cubano
-  ecuador:     { voice_id: 'DZksvRcjbVkbnIwYVMEQ', settings: SAFE_SETTINGS },  // Esaú — ecuatoriano cálido
-  elsalvador:  { voice_id: 'cgSgspJ2msm6clMCkdW9', settings: SAFE_SETTINGS },  // Valentina
-  espana:      { voice_id: 'iP95p4xoKVk53GoZ742B', settings: SAFE_SETTINGS },  // Mikel — España (único caso com sotaque espanhol)
-  guatemala:   { voice_id: 'cgSgspJ2msm6clMCkdW9', settings: SAFE_SETTINGS },  // Valentina
-  honduras:    { voice_id: 'cgSgspJ2msm6clMCkdW9', settings: SAFE_SETTINGS },  // Valentina
-  mexico:      { voice_id: 'P951amuWPNCJ0L15rFyC', settings: SAFE_SETTINGS },  // Alejandro nuevo — mexicano cálido
-  nicaragua:   { voice_id: 'cgSgspJ2msm6clMCkdW9', settings: SAFE_SETTINGS },  // Valentina
-  panama:      { voice_id: 'nPczCjzI2devNBz1zQrb', settings: CARIB_SETTINGS }, // Eleguar — caribeño
-  paraguay:    { voice_id: 'XB0fDUnXU5powFXDhCwa', settings: SAFE_SETTINGS },  // Lizy
-  peru:        { voice_id: 'WrKMouCyVAmTemNLZkOw', settings: SAFE_SETTINGS },  // Emilia — peruana calma
-  puertorico:  { voice_id: 'ISTw2UT8hNs80bzKPenA', settings: CARIB_SETTINGS }, // Leo — puertorriqueño
-  dominicana:  { voice_id: '2vyVHGyPYK7eCnfdVvk9', settings: CARIB_SETTINGS }, // dominicana
-  uruguay:     { voice_id: '1WXz8v08ntDcSTeVXMN2', settings: SAFE_SETTINGS },  // Malena Tango — rioplatense
-  venezuela:   { voice_id: 'Aoh8oiCIlPke1wFxeNuK', settings: CARIB_SETTINGS }, // David — venezolano conversacional
+  argentina:  { voice_id: '1WXz8v08ntDcSTeVXMN2', settings: SAFE },
+  bolivia:    { voice_id: 'XB0fDUnXU5powFXDhCwa', settings: SAFE },
+  chile:      { voice_id: 'Fd38GRHtJllY0CuguAy9', settings: SAFE },
+  colombia:   { voice_id: 'MqSrMUk8EHh32HBKytrG', settings: SAFE },
+  costarica:  { voice_id: 'cgSgspJ2msm6clMCkdW9', settings: SAFE },
+  cuba:       { voice_id: '1hB7zCGWj11SeMuBseeI', settings: CARIB },
+  ecuador:    { voice_id: 'DZksvRcjbVkbnIwYVMEQ', settings: SAFE },
+  elsalvador: { voice_id: 'cgSgspJ2msm6clMCkdW9', settings: SAFE },
+  espana:     { voice_id: 'iP95p4xoKVk53GoZ742B', settings: SAFE },
+  guatemala:  { voice_id: 'cgSgspJ2msm6clMCkdW9', settings: SAFE },
+  honduras:   { voice_id: 'cgSgspJ2msm6clMCkdW9', settings: SAFE },
+  mexico:     { voice_id: 'P951amuWPNCJ0L15rFyC', settings: SAFE },
+  nicaragua:  { voice_id: 'cgSgspJ2msm6clMCkdW9', settings: SAFE },
+  panama:     { voice_id: 'nPczCjzI2devNBz1zQrb', settings: CARIB },
+  paraguay:   { voice_id: 'XB0fDUnXU5powFXDhCwa', settings: SAFE },
+  peru:       { voice_id: 'WrKMouCyVAmTemNLZkOw', settings: SAFE },
+  puertorico: { voice_id: 'ISTw2UT8hNs80bzKPenA', settings: CARIB },
+  dominicana: { voice_id: '2vyVHGyPYK7eCnfdVvk9', settings: CARIB },
+  uruguay:    { voice_id: '1WXz8v08ntDcSTeVXMN2', settings: SAFE },
+  venezuela:  { voice_id: 'Aoh8oiCIlPke1wFxeNuK', settings: CARIB },
 };
 
-// ─────────────────────────────────────────────
-// GET /api/auditiva/audio/:episodeId/:sectionIndex
-// Gera áudio on-demand e faz cache em disco
-// ─────────────────────────────────────────────
+// ─── GET /api/auditiva/audio/:episodeId/:sectionIndex ───
 router.get('/audio/:episodeId/:sectionIndex', authMiddleware, async (req, res) => {
   const { episodeId, sectionIndex } = req.params;
   const idx = parseInt(sectionIndex);
 
   if (!episodeId || isNaN(idx) || idx < 0 || idx > 20) {
-    return res.status(400).json({ error: 'Parâmetros inválidos.' });
+    return res.status(400).json({ error: 'Parametros invalidos.' });
   }
 
-  // Hash único para esta seção
-  const cacheKey = `${episodeId}_sec${idx}`;
-  const filePath = path.join(AUDITIVA_CACHE_DIR, `${cacheKey}.mp3`);
+  const cacheKey = `${episodeId}_sec${idx}.mp3`;
 
-  // 1. Serve do cache se já existe
-  if (fs.existsSync(filePath)) {
-    console.log(`[AUDITIVA] Cache HIT — ${cacheKey}`);
+  // 1. Servir do R2 se existe (cache permanente)
+  const cached = await r2Get(cacheKey);
+  if (cached) {
+    console.log(`[AUDITIVA] R2 HIT — ${cacheKey}`);
     res.set('Content-Type', 'audio/mpeg');
+    res.set('Content-Length', cached.length);
     res.set('X-Cache', 'HIT');
-    res.set('Cache-Control', 'public, max-age=604800'); // 7 dias
-    return res.sendFile(filePath);
+    res.set('Cache-Control', 'public, max-age=31536000');
+    return res.send(cached);
   }
 
-  // 2. Precisa dos dados da seção para gerar
+  // 2. Precisa gerar — requer text, speaker, countryCode
   const { text, speaker, countryCode } = req.query;
   if (!text || !speaker || !countryCode) {
-    return res.status(400).json({ error: 'Parâmetros text, speaker e countryCode são obrigatórios na primeira geração.' });
+    return res.status(400).json({ error: 'Parametros text, speaker e countryCode obrigatorios na primeira geracao.' });
   }
-
   if (text.length > 2000) {
     return res.status(400).json({ error: 'Texto muito longo.' });
   }
 
-  // 3. Resolver voz: narrador ou guia local
   const isNarrator = speaker === 'narrator';
   const voiceConfig = isNarrator ? NARRATOR_VOICE : (GUIDE_VOICES[countryCode] || GUIDE_VOICES.mexico);
 
   try {
-    console.log(`[AUDITIVA] Gerando áudio | ${cacheKey} | ${isNarrator ? 'narrador' : 'guia ' + countryCode} | ${text.substring(0, 50)}...`);
+    console.log(`[AUDITIVA] Gerando | ${cacheKey} | ${isNarrator ? 'narrador' : 'guia ' + countryCode}`);
 
     const response = await axios.post(
       `${ELEVENLABS_BASE}/text-to-speech/${voiceConfig.voice_id}`,
@@ -122,29 +142,31 @@ router.get('/audio/:episodeId/:sectionIndex', authMiddleware, async (req, res) =
           'Content-Type': 'application/json'
         },
         responseType: 'arraybuffer',
-        timeout: 90000 // 90s para primera generação (ElevenLabs pode demorar)
+        timeout: 90000
       }
     );
 
     const audioBuffer = Buffer.from(response.data);
 
-    // Salvar em disco — cache permanente
-    fs.writeFileSync(filePath, audioBuffer);
-    console.log(`[AUDITIVA] ✅ Salvo ${audioBuffer.length} bytes — ${cacheKey}.mp3`);
+    // 3. Salvar no R2 em background (nao bloqueia resposta)
+    r2Put(cacheKey, audioBuffer).then(ok => {
+      if (ok) console.log(`[AUDITIVA] R2 salvo — ${cacheKey} (${audioBuffer.length} bytes)`);
+    });
 
+    // 4. Responder com audio
     res.set('Content-Type', 'audio/mpeg');
     res.set('Content-Length', audioBuffer.length);
     res.set('X-Cache', 'MISS');
-    res.set('Cache-Control', 'public, max-age=604800');
+    res.set('Cache-Control', 'public, max-age=31536000');
     res.send(audioBuffer);
 
   } catch (err) {
     const status = err.response?.status;
     console.error(`[AUDITIVA] Erro ElevenLabs (${status}):`, err.message);
     if (status === 429) {
-      return res.status(429).json({ error: 'Limite de áudio atingido. Tente em alguns minutos.' });
+      return res.status(429).json({ error: 'Limite de audio atingido. Tente em alguns minutos.' });
     }
-    res.status(500).json({ error: 'Erro ao gerar áudio.' });
+    res.status(500).json({ error: 'Erro ao gerar audio.' });
   }
 });
 
