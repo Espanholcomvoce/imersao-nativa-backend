@@ -18,7 +18,7 @@ const axios = require('axios');
 const { authMiddleware } = require('../middleware/auth');
 
 const JWT_SECRET = process.env.JWT_SECRET;
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '24h';
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '4h';
 const HOTMART_CLIENT_ID = process.env.HOTMART_CLIENT_ID;
 const HOTMART_CLIENT_SECRET = process.env.HOTMART_CLIENT_SECRET;
 const HOTMART_BASIC = process.env.HOTMART_BASIC;
@@ -308,12 +308,12 @@ router.get('/verify', authMiddleware, async (req, res) => {
     });
 
   } catch (err) {
-    // Se Hotmart está fora do ar, permite acesso temporário (JWT já validado)
-    console.warn(`[VERIFY] Hotmart indisponível para ${email} — permitindo acesso via JWT`);
-    res.json({
-      valid: true,
-      email,
-      expires_at: new Date(req.user.exp * 1000).toISOString()
+    // Hotmart indisponível — NÃO permitir acesso, forçar re-login
+    console.warn(`[VERIFY] Hotmart indisponível para ${email} — negando acesso por segurança`);
+    res.status(503).json({
+      valid: false,
+      error: 'Sistema temporariamente indisponível. Tente novamente em alguns minutos.',
+      code: 'HOTMART_UNAVAILABLE'
     });
   }
 });
