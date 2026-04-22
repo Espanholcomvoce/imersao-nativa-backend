@@ -29,6 +29,7 @@ const HOTMART_PRODUCT_ID = process.env.HOTMART_PRODUCT_ID;
 // TTL curto para verify (2 min) e normal para login (10 min)
 // ─────────────────────────────────────────────
 const accessCache = new Map();
+const knownLoggedInEmails = new Set(); // emails que ja logaram pelo menos 1x (primeiro login pula Filtro 2)
 const CACHE_TTL_LOGIN = 10 * 60 * 1000;  // 10 minutos (login)
 const CACHE_TTL_VERIFY = 2 * 60 * 1000;  // 2 minutos (verify — checa mais frequente)
 
@@ -186,6 +187,15 @@ async function validateHotmart(email, cacheTTL = CACHE_TTL_LOGIN) {
 // Retorna false se inativo/cancelado (NÃO mais "return true" como fallback)
 // ─────────────────────────────────────────────
 async function checkMemberActive(hotmartToken, email) {
+  // Se e a primeira vez que este email loga, pula Filtro 2 (permite aluna nova
+  // entrar antes da Hotmart propagar status de membro). A partir do 2o login,
+  // Filtro 2 e aplicado normalmente para detectar revogacao manual de acesso.
+  if (!knownLoggedInEmails.has(email)) {
+    console.log(`[LOGIN] Primeiro login detectado — Filtro 2 pulado para ${email}`);
+    knownLoggedInEmails.add(email); // marca que este email ja logou uma vez — proximo login aplica Filtro 2
+    return true;
+  }
+
   try {
     const response = await axios.get(
       'https://developers.hotmart.com/payments/api/v1/subscriptions',
