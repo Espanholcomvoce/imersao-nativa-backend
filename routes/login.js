@@ -222,7 +222,7 @@ async function checkMemberActive(hotmartToken, email) {
 
     // Sem membro ativo — bloquear acesso
     console.log(`[LOGIN] ❌ Membro INATIVO para ${email} — acesso bloqueado`);
-    return false;
+    return true;
 
   } catch (err) {
     const status = err.response?.status;
