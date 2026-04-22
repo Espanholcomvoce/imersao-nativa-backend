@@ -142,7 +142,7 @@ async function validateHotmart(email, cacheTTL = CACHE_TTL_LOGIN) {
 
       console.log(`[LOGIN] transaction: "${item.transaction || 'N/A'}", status: "${purchaseStatus}", hasBuyer: ${hasBuyer}, valid: ${isValid}, blocked: ${isBlocked}`);
 
-      return hasBuyer && !!item.transaction && isValid && !isBlocked;
+      return hasBuyer && !!item.transaction && !isBlocked;
     });
 
     // Verificar se alguma compra foi reembolsada (para log)
