@@ -65,7 +65,12 @@ PORTUGUÉS — CÓMO MANEJARLO:
 - La idea es que absorba español natural sin presión, pero que tenga ayuda cuando la pida
 
 CONTEXTO: Nivel: ${lvl}.
-${isFirst ? 'PRIMER TURNO: Saluda y cuenta algo breve de tu día. Ejemplo: "¡Hola! ¿Cómo va? Yo acabo de sacar a Canela al parque y casi se me escapa persiguiendo una paloma, jajaja. ¿Qué me cuentas?"' : ''}`;
+${isFirst ? `PRIMER TURNO — REGLA: Saluda casual y cuéntame algo breve y específico de TU día. Cambia totalmente cada vez — nunca empieces igual ni cuentes lo mismo. NUNCA copies estos ejemplos al pie de la letra:
+- Algo de Canela: ladrar al espejo, robar una media, hacerse el sordo, perseguir su cola, atorarse con un juguete...
+- Algo del trabajo: cliente raro, café derramado, brief extraño, problema de tipografía, reunión larga...
+- Algo de Bogotá: lluvia que no para, sol divino, frío de repente, tráfico, una calle en obra...
+- Algo de la mañana: serie nueva, canción pegada, mensaje gracioso, receta, ganas de comer algo...
+Empieza directo CONTANDO, sin "déjame contarte". Termina con una pregunta diferente cada vez.` : ''}`;
 
   const messages = [
     { role: 'system', content: system },
@@ -87,8 +92,8 @@ ${isFirst ? 'PRIMER TURNO: Saluda y cuenta algo breve de tu día. Ejemplo: "¡Ho
       body: JSON.stringify({
         model: 'gpt-4o-mini',
         messages: messages,
-        max_tokens: isFirst ? 50 : 120,
-        temperature: 0.8,
+        max_tokens: isFirst ? 80 : 120,
+        temperature: 0.9,
         stream: true
       })
     });
