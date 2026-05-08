@@ -9,7 +9,7 @@
 const express = require('express');
 const router = express.Router();
 const Anthropic = require('@anthropic-ai/sdk');
-const { authMiddleware } = require('../middleware/auth');
+const { authWithRevalidation } = require('../middleware/auth');
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY
@@ -71,7 +71,7 @@ REGLAS:
 // POST /api/chat
 // Body: { message, context?, level?, history? }
 // ─────────────────────────────────────────────
-router.post('/', authMiddleware, async (req, res) => {
+router.post('/', authWithRevalidation, async (req, res) => {
   const {
     message,
     context = 'conversation',
@@ -153,7 +153,7 @@ router.post('/', authMiddleware, async (req, res) => {
 // Body: { text, level? }
 // Corrige um texto em espanhol com feedback completo
 // ─────────────────────────────────────────────
-router.post('/correction', authMiddleware, async (req, res) => {
+router.post('/correction', authWithRevalidation, async (req, res) => {
   const { text, level = 'B1' } = req.body;
 
   if (!text || text.trim().length === 0) {

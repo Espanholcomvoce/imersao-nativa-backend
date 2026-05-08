@@ -12,7 +12,7 @@ const router = express.Router();
 const axios = require('axios');
 const crypto = require('crypto');
 const { S3Client, GetObjectCommand, PutObjectCommand } = require('@aws-sdk/client-s3');
-const { authMiddleware } = require('../middleware/auth');
+const { authMiddleware, authWithRevalidation } = require('../middleware/auth');
 
 const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY;
 const ELEVENLABS_BASE = 'https://api.elevenlabs.io/v1';
@@ -74,7 +74,7 @@ function getCacheKey(text, voiceId) {
 }
 
 // ─── POST /api/tts ───
-router.post('/', authMiddleware, async (req, res) => {
+router.post('/', authWithRevalidation, async (req, res) => {
   const { text, voice = 'Maya', voice_id } = req.body;
 
   if (!text || text.trim().length === 0) {
@@ -145,7 +145,7 @@ router.post('/', authMiddleware, async (req, res) => {
 // ─── GET /api/tts/vocab ───
 const VOCAB_VOICE_ID = 'nTkjq09AuYgsNR8E4sDe'; // Cristina Campos
 
-router.get('/vocab', authMiddleware, async (req, res) => {
+router.get('/vocab', authWithRevalidation, async (req, res) => {
   const { text } = req.query;
 
   if (!text || text.trim().length === 0) {

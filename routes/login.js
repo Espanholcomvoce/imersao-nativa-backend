@@ -329,3 +329,6 @@ router.get('/verify', authMiddleware, async (req, res) => {
 });
 
 module.exports = router;
+module.exports.validateHotmart = validateHotmart;
+module.exports.CACHE_TTL_VERIFY = CACHE_TTL_VERIFY;
+module.exports.CACHE_TTL_LOGIN = CACHE_TTL_LOGIN;

@@ -6,10 +6,9 @@
 const express = require('express');
 const router = express.Router();
 router.use(function(req, res, next) { req.app.set('trust proxy', 1); next(); });
-const jwt = require('jsonwebtoken');
+const { authMiddleware, authWithRevalidation } = require('../middleware/auth');
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
-const JWT_SECRET = process.env.JWT_SECRET;
 const DAILY_LIMIT_MINUTES = parseInt(process.env.REALTIME_DAILY_MINUTES || '15');
 
 const usageMap = new Map();
@@ -32,14 +31,7 @@ function getRemainingSeconds(email) {
   return Math.max(0, DAILY_LIMIT_MINUTES * 60 - getUsage(email).seconds);
 }
 
-function auth(req, res, next) {
-  const token = (req.headers['authorization'] || '').replace('Bearer ', '').trim();
-  if (!token) return res.status(401).json({ error: 'Token necessário.' });
-  try { req.user = jwt.verify(token, JWT_SECRET); next(); }
-  catch { res.status(401).json({ error: 'Token inválido.' }); }
-}
-
-router.get('/status', auth, (req, res) => {
+router.get('/status', authMiddleware, (req, res) => {
   const remaining = getRemainingSeconds(req.user.email);
   const u = getUsage(req.user.email);
   res.json({
@@ -51,7 +43,7 @@ router.get('/status', auth, (req, res) => {
   });
 });
 
-router.post('/token', auth, async (req, res) => {
+router.post('/token', authWithRevalidation, async (req, res) => {
   const email = req.user.email;
   const remaining = getRemainingSeconds(email);
   if (remaining <= 0) return res.status(403).json({ error: 'Limite diário atingido.', limit_reached: true });
@@ -165,7 +157,7 @@ PRIMER TURNO: Saluda y cuenta algo breve de tu día. Ejemplo: "¡Hola! ¿Cómo v
   }
 });
 
-router.post('/end', auth, (req, res) => {
+router.post('/end', authMiddleware, (req, res) => {
   const email = req.user.email;
   const u = getUsage(email);
   if (u.sessionStart) {

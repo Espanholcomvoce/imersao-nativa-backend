@@ -5,17 +5,12 @@
 
 const express = require('express');
 const router = express.Router();
-const jwt = require('jsonwebtoken');
+const { authWithRevalidation } = require('../middleware/auth');
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
-const JWT_SECRET = process.env.JWT_SECRET;
 
-function auth(req, res, next) {
-  const token = (req.headers['authorization'] || '').replace('Bearer ', '').trim();
-  if (!token) return res.status(401).json({ error: 'Token necessário.' });
-  try { req.user = jwt.verify(token, JWT_SECRET); next(); }
-  catch { res.status(401).json({ error: 'Token inválido.' }); }
-}
+// Alias local pra manter as referências de `auth` simples nas rotas existentes
+const auth = authWithRevalidation;
 
 // ─── POST /api/conversa/chat (streaming SSE) ───────────────
 router.post('/chat', auth, async (req, res) => {
