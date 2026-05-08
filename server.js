@@ -103,6 +103,7 @@ app.use('/api/realtime', require('./routes/realtime-conversation'));
 app.use('/api/conversa', require('./routes/conversa'));
 app.use('/api/auditiva', require('./routes/auditiva'));
 app.use('/api/exam-audio', require('./routes/exam-audio'));
+app.use('/api/admin', require('./routes/admin'));
 
 app.use((err, req, res, next) => {
   console.error(`[ERROR] ${req.method} ${req.path}`, err.message);
@@ -123,9 +124,13 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`║  Porta:    ${String(PORT).padEnd(30)}║`);
   console.log(`║  OpenAI:   ${process.env.OPENAI_API_KEY ? '✅ configurado' : '❌ FALTANDO'}                  ║`);
   console.log(`║  JWT:      ${process.env.JWT_SECRET ? '✅ configurado' : '❌ FALTANDO'}                  ║`);
+  console.log(`║  Postgres: ${process.env.DATABASE_URL ? '✅ configurado' : '⚠️  ausente'}                  ║`);
   console.log('╚══════════════════════════════════════════╝');
   console.log('');
 });
+
+// Bootstrap schema do Postgres (idempotente)
+require('./db').init().catch(e => console.error('[DB INIT]', e.message));
 
 const { setupRealtimeWebSocket } = require('./routes/realtime-conversation');
 setupRealtimeWebSocket(server);

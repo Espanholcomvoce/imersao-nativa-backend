@@ -1,52 +1,65 @@
 /**
  * IMERSÃO NATIVA - Conversa em Tempo Real
  * Ephemeral Token → Frontend conecta direto na OpenAI via WebRTC
+ *
+ * Endpoints:
+ *   POST /api/realtime/token      cria session OpenAI + retorna ephemeral key
+ *   GET  /api/realtime/status     uso e limite hoje (fuso BR)
+ *   POST /api/realtime/heartbeat  soma 15s (chamado pelo frontend a cada 15s)
+ *   POST /api/realtime/end        opcional, só para log/cleanup
+ *
+ * Tracking de uso: Postgres (tabela daily_usage), fuso America/Sao_Paulo.
+ * Heartbeat resolve furos do contador antigo (sessão sem /end, restart, etc).
  */
 
 const express = require('express');
 const router = express.Router();
 router.use(function(req, res, next) { req.app.set('trust proxy', 1); next(); });
+
 const { authMiddleware, authWithRevalidation } = require('../middleware/auth');
+const db = require('../db');
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const DAILY_LIMIT_MINUTES = parseInt(process.env.REALTIME_DAILY_MINUTES || '15');
+const DAILY_LIMIT_SECONDS = DAILY_LIMIT_MINUTES * 60;
+const HEARTBEAT_INCREMENT_SECONDS = 15;
 
-const usageMap = new Map();
-
-function getToday() {
-  return new Date().toISOString().split('T')[0];
-}
-
-function getUsage(email) {
-  const today = getToday();
-  let u = usageMap.get(email);
-  if (!u || u.date !== today) {
-    u = { date: today, seconds: 0, sessionStart: null };
-    usageMap.set(email, u);
+// ─── GET /api/realtime/status ───
+router.get('/status', authMiddleware, async (req, res) => {
+  try {
+    const used = await db.getSecondsUsedToday(req.user.email);
+    const remaining = Math.max(0, DAILY_LIMIT_SECONDS - used);
+    res.json({
+      daily_limit_minutes: DAILY_LIMIT_MINUTES,
+      used_seconds: used,
+      remaining_seconds: remaining,
+      remaining_minutes: Math.floor(remaining / 60),
+      limit_reached: remaining === 0
+    });
+  } catch (err) {
+    console.error('[REALTIME status]', err.message);
+    res.status(500).json({ error: 'Erro ao consultar uso.' });
   }
-  return u;
-}
-
-function getRemainingSeconds(email) {
-  return Math.max(0, DAILY_LIMIT_MINUTES * 60 - getUsage(email).seconds);
-}
-
-router.get('/status', authMiddleware, (req, res) => {
-  const remaining = getRemainingSeconds(req.user.email);
-  const u = getUsage(req.user.email);
-  res.json({
-    daily_limit_minutes: DAILY_LIMIT_MINUTES,
-    used_seconds: u.seconds,
-    remaining_seconds: remaining,
-    remaining_minutes: Math.floor(remaining / 60),
-    limit_reached: remaining === 0
-  });
 });
 
+// ─── POST /api/realtime/token ───
+// Cria session na OpenAI Realtime (gpt-realtime GA) e retorna ephemeral key.
+// Bloqueia se aluno já bateu o limite diário (consulta Postgres, não Map em RAM).
 router.post('/token', authWithRevalidation, async (req, res) => {
   const email = req.user.email;
-  const remaining = getRemainingSeconds(email);
-  if (remaining <= 0) return res.status(403).json({ error: 'Limite diário atingido.', limit_reached: true });
+
+  let usedSeconds;
+  try {
+    usedSeconds = await db.getSecondsUsedToday(email);
+  } catch (err) {
+    console.error('[REALTIME token db]', err.message);
+    return res.status(500).json({ error: 'Erro ao consultar uso.' });
+  }
+
+  const remaining = Math.max(0, DAILY_LIMIT_SECONDS - usedSeconds);
+  if (remaining <= 0) {
+    return res.status(403).json({ error: 'Limite diário atingido.', limit_reached: true });
+  }
 
   const { level, situation } = req.body || {};
 
@@ -106,7 +119,7 @@ CONTEXTO: Nivel del alumno: ${lvl}.
 PRIMER TURNO: Saluda y cuenta algo breve de tu día. Ejemplo: "¡Hola! ¿Cómo va? Yo acabo de sacar a Canela al parque y casi se me escapa persiguiendo una paloma, jajaja. ¿Qué me cuentas?"`;
 
   try {
-    // Endpoint NOVO (GA): /v1/realtime/client_secrets — gpt-realtime exige esta API
+    // Endpoint NOVO (GA): /v1/realtime/client_secrets
     const r = await fetch('https://api.openai.com/v1/realtime/client_secrets', {
       method: 'POST',
       headers: {
@@ -143,13 +156,12 @@ PRIMER TURNO: Saluda y cuenta algo breve de tu día. Ejemplo: "¡Hola! ¿Cómo v
     }
 
     const data = await r.json();
-    const u = getUsage(email);
-    u.sessionStart = Date.now();
-    usageMap.set(email, u);
-
     console.log(`[REALTIME] Token gerado: ${email} | Restam ${Math.floor(remaining / 60)}min`);
-    // Mantém estrutura {client_secret: {value}} pra compatibilidade com o frontend existente
-    res.json({ client_secret: { value: data.value }, remaining_seconds: remaining });
+    res.json({
+      client_secret: { value: data.value },
+      remaining_seconds: remaining,
+      heartbeat_interval_seconds: HEARTBEAT_INCREMENT_SECONDS
+    });
 
   } catch (err) {
     console.error('[REALTIME]', err.message);
@@ -157,16 +169,37 @@ PRIMER TURNO: Saluda y cuenta algo breve de tu día. Ejemplo: "¡Hola! ¿Cómo v
   }
 });
 
-router.post('/end', authMiddleware, (req, res) => {
-  const email = req.user.email;
-  const u = getUsage(email);
-  if (u.sessionStart) {
-    u.seconds += Math.floor((Date.now() - u.sessionStart) / 1000);
-    u.sessionStart = null;
-    usageMap.set(email, u);
-    console.log(`[REALTIME] Encerrado: ${email} | Total hoje: ${u.seconds}s`);
+// ─── POST /api/realtime/heartbeat ───
+// Frontend chama a cada 15s enquanto sessão Realtime ativa.
+// Soma 15s ao uso de hoje, retorna {stop: true} se aluno bateu limite.
+//
+// Auth simples (sem revalidação Hotmart) porque é chamado MUITO frequente.
+// Aluno reembolsado é detectado na próxima abertura via /token (que revalida).
+router.post('/heartbeat', authMiddleware, async (req, res) => {
+  try {
+    const total = await db.addSecondsToToday(req.user.email, HEARTBEAT_INCREMENT_SECONDS);
+    const remaining = Math.max(0, DAILY_LIMIT_SECONDS - total);
+    res.json({
+      stop: remaining <= 0,
+      used_seconds: total,
+      remaining_seconds: remaining
+    });
+  } catch (err) {
+    console.error('[REALTIME heartbeat]', err.message);
+    res.status(500).json({ error: 'Erro ao registrar heartbeat.' });
   }
-  res.json({ ok: true });
+});
+
+// ─── POST /api/realtime/end ───
+// Opcional. Heartbeat já contou o tempo. Aqui só log.
+router.post('/end', authMiddleware, async (req, res) => {
+  try {
+    const total = await db.getSecondsUsedToday(req.user.email);
+    console.log(`[REALTIME] Encerrado: ${req.user.email} | Total hoje: ${total}s`);
+    res.json({ ok: true, used_seconds: total });
+  } catch {
+    res.json({ ok: true });
+  }
 });
 
 function setupRealtimeWebSocket(httpServer) {
