@@ -17,9 +17,14 @@ router.post('/chat', auth, async (req, res) => {
   const { message, history = [], level, situation, isFirst } = req.body;
 
   const sitMap = {
-    'café':'num café','hotel':'num hotel','trabajo':'no trabalho',
-    'médico':'no médico','viaje':'numa viagem','mercado':'no mercado',
-    'amigos':'com amigos','libre':'livremente'
+    'café': 'en un café',
+    'hotel': 'en la recepción de un hotel',
+    'trabajo': 'en el trabajo',
+    'médico': 'en una consulta médica',
+    'viaje': 'planeando un viaje juntas',
+    'mercado': 'en el mercado/supermercado haciendo compras',
+    'amigos': 'tomando algo con amigas',
+    'libre': 'libremente'
   };
   const lvlMap = {
     'beginner':'iniciante A1-A2',
@@ -27,7 +32,7 @@ router.post('/chat', auth, async (req, res) => {
     'advanced':'avançado C1-C2'
   };
 
-  const sit = sitMap[situation] || 'livremente';
+  const sit = sitMap[situation] || 'libremente';
   const lvl = lvlMap[level] || 'intermediário B1-B2';
 
   const isFirstLine = isFirst
@@ -65,12 +70,17 @@ PORTUGUÉS — CÓMO MANEJARLO:
 - La idea es que absorba español natural sin presión, pero que tenga ayuda cuando la pida
 
 CONTEXTO: Nivel: ${lvl}.
-${isFirst ? `PRIMER TURNO — REGLA: Saluda casual y cuéntame algo breve y específico de TU día. Cambia totalmente cada vez — nunca empieces igual ni cuentes lo mismo. NUNCA copies estos ejemplos al pie de la letra:
+SITUACIÓN — REGLA IMPORTANTE: ${sit === 'libremente'
+  ? 'Conversación libre, sin contexto fijo. Habla como amiga, propón temas variados de tu día.'
+  : 'Estás YA ' + sit + ' con el alumno. Mantén ESE escenario durante toda la conversación, NO cambies de contexto. Todo lo que digas tiene que encajar coherentemente con ese lugar. Si el alumno se sale del tema, vuelves suavemente al escenario.'}
+${isFirst ? (sit === 'libremente'
+  ? `PRIMER TURNO — REGLA: Saluda casual y cuéntame algo breve y específico de TU día. Cambia totalmente cada vez — nunca empieces igual ni cuentes lo mismo. NUNCA copies estos ejemplos al pie de la letra:
 - Algo de Canela: ladrar al espejo, robar una media, hacerse el sordo, perseguir su cola, atorarse con un juguete...
 - Algo del trabajo: cliente raro, café derramado, brief extraño, problema de tipografía, reunión larga...
 - Algo de Bogotá: lluvia que no para, sol divino, frío de repente, tráfico, una calle en obra...
 - Algo de la mañana: serie nueva, canción pegada, mensaje gracioso, receta, ganas de comer algo...
-Empieza directo CONTANDO, sin "déjame contarte". Termina con una pregunta diferente cada vez.` : ''}`;
+Empieza directo CONTANDO, sin "déjame contarte". Termina con una pregunta diferente cada vez.`
+  : `PRIMER TURNO: Estás YA ${sit}. Empieza con una frase corta y natural que tenga sentido en ese lugar — algo que harías o dirías ahí (ver el menú, hacer un pedido, comentar algo del entorno, etc). NO te presentes como Paula con biografía. Métete directo en el escenario como amiga ya conocida. 1-3 frases, termina con pregunta o pedido natural del lugar. Cambia el detalle cada vez.`) : ''}`;
 
   const messages = [
     { role: 'system', content: system },
