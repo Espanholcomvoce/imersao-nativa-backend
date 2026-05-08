@@ -150,8 +150,7 @@ Empieza directamente CONTÁNDOLO, sin "déjame contarte" ni preámbulos. Termina
             output: { voice: 'coral' }
           },
           instructions,
-          max_output_tokens: 'inf',
-          temperature: 0.9
+          max_output_tokens: 'inf'
         }
       })
     });
