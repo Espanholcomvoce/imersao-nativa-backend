@@ -121,7 +121,7 @@ PRIMER TURNO: Saluda y cuenta algo breve de tu día. Ejemplo: "¡Hola! ¿Cómo v
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: 'gpt-4o-realtime-preview-2024-12-17',
+        model: 'gpt-realtime',
         voice: 'coral',
         instructions,
         input_audio_transcription: { model: 'whisper-1' },
