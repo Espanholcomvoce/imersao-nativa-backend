@@ -114,26 +114,33 @@ CONTEXTO: Nivel del alumno: ${lvl}.
 PRIMER TURNO: Saluda y cuenta algo breve de tu día. Ejemplo: "¡Hola! ¿Cómo va? Yo acabo de sacar a Canela al parque y casi se me escapa persiguiendo una paloma, jajaja. ¿Qué me cuentas?"`;
 
   try {
-    const r = await fetch('https://api.openai.com/v1/realtime/sessions', {
+    // Endpoint NOVO (GA): /v1/realtime/client_secrets — gpt-realtime exige esta API
+    const r = await fetch('https://api.openai.com/v1/realtime/client_secrets', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${OPENAI_API_KEY}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: 'gpt-4o-realtime-preview',
-        voice: 'coral',
-        instructions,
-        input_audio_transcription: { model: 'whisper-1' },
-        turn_detection: {
-          type: 'server_vad',
-          threshold: 0.5,
-          prefix_padding_ms: 500,
-          silence_duration_ms: 1500,
-          create_response: true
-        },
-        temperature: 0.8,
-        max_response_output_tokens: 'inf'
+        session: {
+          type: 'realtime',
+          model: 'gpt-realtime',
+          audio: {
+            input: {
+              transcription: { model: 'whisper-1' },
+              turn_detection: {
+                type: 'server_vad',
+                threshold: 0.5,
+                prefix_padding_ms: 500,
+                silence_duration_ms: 1500,
+                create_response: true
+              }
+            },
+            output: { voice: 'coral' }
+          },
+          instructions,
+          max_output_tokens: 'inf'
+        }
       })
     });
 
@@ -143,13 +150,14 @@ PRIMER TURNO: Saluda y cuenta algo breve de tu día. Ejemplo: "¡Hola! ¿Cómo v
       return res.status(502).json({ error: 'Erro ao criar sessão.', detail: err.slice(0, 200) });
     }
 
-    const session = await r.json();
+    const data = await r.json();
     const u = getUsage(email);
     u.sessionStart = Date.now();
     usageMap.set(email, u);
 
     console.log(`[REALTIME] Token gerado: ${email} | Restam ${Math.floor(remaining / 60)}min`);
-    res.json({ client_secret: session.client_secret, remaining_seconds: remaining });
+    // Mantém estrutura {client_secret: {value}} pra compatibilidade com o frontend existente
+    res.json({ client_secret: { value: data.value }, remaining_seconds: remaining });
 
   } catch (err) {
     console.error('[REALTIME]', err.message);
