@@ -88,4 +88,50 @@ router.get('/today', adminAuth, async (req, res) => {
   }
 });
 
+// GET /api/admin/module-report?from=YYYY-MM-DD&to=YYYY-MM-DD&email=opcional
+// Retorna 4 datasets prontos pra dashboard HTML (Chart.js):
+//   - by_user: top alunos por minutos no período
+//   - by_module: total por atividade
+//   - by_day: série temporal (gráfico de linha)
+//   - detail: linha por (dia, aluno, módulo) — pra tabela e drill-down
+router.get('/module-report', adminAuth, async (req, res) => {
+  try {
+    const { from, to, email } = req.query;
+    if (!from || !to) {
+      return res.status(400).json({ error: 'Parâmetros from e to (YYYY-MM-DD) são obrigatórios.' });
+    }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(from) || !/^\d{4}-\d{2}-\d{2}$/.test(to)) {
+      return res.status(400).json({ error: 'Formato de data inválido. Use YYYY-MM-DD.' });
+    }
+    const emailFilter = email && typeof email === 'string' ? email.toLowerCase().trim() : null;
+
+    const [by_user, by_module, by_day, detail] = await Promise.all([
+      db.getModuleReport_byUser(from, to, emailFilter),
+      db.getModuleReport_byModule(from, to, emailFilter),
+      db.getModuleReport_byDay(from, to, emailFilter),
+      db.getModuleReport_detail(from, to, emailFilter)
+    ]);
+
+    const totalSeconds = by_module.reduce((s, r) => s + r.total_seconds, 0);
+
+    res.json({
+      from, to,
+      email_filter: emailFilter,
+      summary: {
+        total_users: by_user.length,
+        total_minutes: Math.round(totalSeconds / 60),
+        total_seconds: totalSeconds,
+        days_in_period: by_day.length
+      },
+      by_user,
+      by_module,
+      by_day,
+      detail
+    });
+  } catch (err) {
+    console.error('[ADMIN module-report]', err.message);
+    res.status(500).json({ error: 'Erro ao gerar relatório de módulos.' });
+  }
+});
+
 module.exports = router;

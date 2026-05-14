@@ -104,6 +104,7 @@ app.use('/api/conversa', require('./routes/conversa'));
 app.use('/api/auditiva', require('./routes/auditiva'));
 app.use('/api/exam-audio', require('./routes/exam-audio'));
 app.use('/api/admin', require('./routes/admin'));
+app.use('/api/track', require('./routes/track'));
 
 app.use((err, req, res, next) => {
   console.error(`[ERROR] ${req.method} ${req.path}`, err.message);
