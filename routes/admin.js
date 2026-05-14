@@ -94,9 +94,12 @@ router.get('/today', adminAuth, async (req, res) => {
 //   - by_module: total por atividade
 //   - by_day: série temporal (gráfico de linha)
 //   - detail: linha por (dia, aluno, módulo) — pra tabela e drill-down
+// Lista canônica de módulos aceitos (defesa contra injeção via query)
+const VALID_MODULES = ['conversacao','realtime','sre','leitura','imersao_cultural','tira_duvidas','producao_escrita'];
+
 router.get('/module-report', adminAuth, async (req, res) => {
   try {
-    const { from, to, email } = req.query;
+    const { from, to, email, module } = req.query;
     if (!from || !to) {
       return res.status(400).json({ error: 'Parâmetros from e to (YYYY-MM-DD) são obrigatórios.' });
     }
@@ -104,12 +107,13 @@ router.get('/module-report', adminAuth, async (req, res) => {
       return res.status(400).json({ error: 'Formato de data inválido. Use YYYY-MM-DD.' });
     }
     const emailFilter = email && typeof email === 'string' ? email.toLowerCase().trim() : null;
+    const moduleFilter = module && typeof module === 'string' && VALID_MODULES.includes(module) ? module : null;
 
     const [by_user, by_module, by_day, detail] = await Promise.all([
-      db.getModuleReport_byUser(from, to, emailFilter),
-      db.getModuleReport_byModule(from, to, emailFilter),
-      db.getModuleReport_byDay(from, to, emailFilter),
-      db.getModuleReport_detail(from, to, emailFilter)
+      db.getModuleReport_byUser(from, to, emailFilter, moduleFilter),
+      db.getModuleReport_byModule(from, to, emailFilter, moduleFilter),
+      db.getModuleReport_byDay(from, to, emailFilter, moduleFilter),
+      db.getModuleReport_detail(from, to, emailFilter, moduleFilter)
     ]);
 
     const totalSeconds = by_module.reduce((s, r) => s + r.total_seconds, 0);
@@ -117,6 +121,7 @@ router.get('/module-report', adminAuth, async (req, res) => {
     res.json({
       from, to,
       email_filter: emailFilter,
+      module_filter: moduleFilter,
       summary: {
         total_users: by_user.length,
         total_minutes: Math.round(totalSeconds / 60),

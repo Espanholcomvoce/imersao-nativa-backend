@@ -176,13 +176,23 @@ function _unifiedUsageSubquery() {
 }
 
 /**
- * Relatório admin: totais por aluno (período).
+ * Helper: monta WHERE + params com filtros opcionais (email + módulo).
+ * Tabela base é o subquery unificado; condições aplicam sobre suas colunas.
  */
-async function getModuleReport_byUser(fromDate, toDate, emailFilter) {
-  if (!DATABASE_URL) return [];
+function _buildFilters(fromDate, toDate, emailFilter, moduleFilter) {
   const params = [fromDate, toDate];
   let where = 'usage_date BETWEEN $1 AND $2';
   if (emailFilter) { params.push(emailFilter); where += ` AND email = $${params.length}`; }
+  if (moduleFilter) { params.push(moduleFilter); where += ` AND module = $${params.length}`; }
+  return { where, params };
+}
+
+/**
+ * Relatório admin: totais por aluno (período).
+ */
+async function getModuleReport_byUser(fromDate, toDate, emailFilter, moduleFilter) {
+  if (!DATABASE_URL) return [];
+  const { where, params } = _buildFilters(fromDate, toDate, emailFilter, moduleFilter);
   const r = await pool.query(
     `SELECT email,
             SUM(seconds_used)::int AS total_seconds,
@@ -200,12 +210,11 @@ async function getModuleReport_byUser(fromDate, toDate, emailFilter) {
 
 /**
  * Relatório admin: totais por módulo (período).
+ * Nota: com moduleFilter, retorna 1 linha (o módulo filtrado) — mantém estrutura.
  */
-async function getModuleReport_byModule(fromDate, toDate, emailFilter) {
+async function getModuleReport_byModule(fromDate, toDate, emailFilter, moduleFilter) {
   if (!DATABASE_URL) return [];
-  const params = [fromDate, toDate];
-  let where = 'usage_date BETWEEN $1 AND $2';
-  if (emailFilter) { params.push(emailFilter); where += ` AND email = $${params.length}`; }
+  const { where, params } = _buildFilters(fromDate, toDate, emailFilter, moduleFilter);
   const r = await pool.query(
     `SELECT module,
             SUM(seconds_used)::int AS total_seconds,
@@ -223,11 +232,9 @@ async function getModuleReport_byModule(fromDate, toDate, emailFilter) {
 /**
  * Relatório admin: série temporal (totais por dia).
  */
-async function getModuleReport_byDay(fromDate, toDate, emailFilter) {
+async function getModuleReport_byDay(fromDate, toDate, emailFilter, moduleFilter) {
   if (!DATABASE_URL) return [];
-  const params = [fromDate, toDate];
-  let where = 'usage_date BETWEEN $1 AND $2';
-  if (emailFilter) { params.push(emailFilter); where += ` AND email = $${params.length}`; }
+  const { where, params } = _buildFilters(fromDate, toDate, emailFilter, moduleFilter);
   const r = await pool.query(
     `SELECT usage_date AS date,
             SUM(seconds_used)::int AS total_seconds,
@@ -245,11 +252,9 @@ async function getModuleReport_byDay(fromDate, toDate, emailFilter) {
 /**
  * Relatório admin: detalhe (aluno × módulo × dia).
  */
-async function getModuleReport_detail(fromDate, toDate, emailFilter) {
+async function getModuleReport_detail(fromDate, toDate, emailFilter, moduleFilter) {
   if (!DATABASE_URL) return [];
-  const params = [fromDate, toDate];
-  let where = 'usage_date BETWEEN $1 AND $2';
-  if (emailFilter) { params.push(emailFilter); where += ` AND email = $${params.length}`; }
+  const { where, params } = _buildFilters(fromDate, toDate, emailFilter, moduleFilter);
   const r = await pool.query(
     `SELECT usage_date AS date,
             email,
