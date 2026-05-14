@@ -163,6 +163,19 @@ async function addModuleUsage(email, module, seconds) {
 }
 
 /**
+ * Helper interno: SELECT unificado de module_usage + daily_usage.
+ * daily_usage (tabela antiga, só Realtime) é exposta com module='realtime'
+ * pra manter histórico visível no dashboard.
+ */
+function _unifiedUsageSubquery() {
+  return `(
+    SELECT email, usage_date, module, seconds_used FROM module_usage
+    UNION ALL
+    SELECT email, usage_date, 'realtime' AS module, seconds_used FROM daily_usage
+  )`;
+}
+
+/**
  * Relatório admin: totais por aluno (período).
  */
 async function getModuleReport_byUser(fromDate, toDate, emailFilter) {
@@ -176,7 +189,7 @@ async function getModuleReport_byUser(fromDate, toDate, emailFilter) {
             ROUND(SUM(seconds_used)/60.0, 1)::float AS total_minutes,
             COUNT(DISTINCT usage_date)::int AS active_days,
             MAX(usage_date) AS last_active
-     FROM module_usage
+     FROM ${_unifiedUsageSubquery()} u
      WHERE ${where}
      GROUP BY email
      ORDER BY total_seconds DESC`,
@@ -198,7 +211,7 @@ async function getModuleReport_byModule(fromDate, toDate, emailFilter) {
             SUM(seconds_used)::int AS total_seconds,
             ROUND(SUM(seconds_used)/60.0, 1)::float AS total_minutes,
             COUNT(DISTINCT email)::int AS unique_users
-     FROM module_usage
+     FROM ${_unifiedUsageSubquery()} u
      WHERE ${where}
      GROUP BY module
      ORDER BY total_seconds DESC`,
@@ -220,7 +233,7 @@ async function getModuleReport_byDay(fromDate, toDate, emailFilter) {
             SUM(seconds_used)::int AS total_seconds,
             ROUND(SUM(seconds_used)/60.0, 1)::float AS total_minutes,
             COUNT(DISTINCT email)::int AS active_users
-     FROM module_usage
+     FROM ${_unifiedUsageSubquery()} u
      WHERE ${where}
      GROUP BY usage_date
      ORDER BY usage_date ASC`,
@@ -243,7 +256,7 @@ async function getModuleReport_detail(fromDate, toDate, emailFilter) {
             module,
             seconds_used,
             ROUND(seconds_used/60.0, 1)::float AS minutes
-     FROM module_usage
+     FROM ${_unifiedUsageSubquery()} u
      WHERE ${where}
      ORDER BY usage_date DESC, email ASC, seconds_used DESC
      LIMIT 5000`,
