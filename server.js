@@ -30,12 +30,18 @@ const allowedOrigins = [
   'http://localhost:8080',
   'https://app.espanholcomvoce.com',
   'https://imersao-nativa.espanholcvfaixapreta.workers.dev',
+  'https://app-imersao-nativa.pages.dev',
 ].filter(Boolean);
+
+// Plataforma Imersão Nativa em Cloudflare Pages: produção + deploys de preview
+// (subdomínios com hash, ex.: 7afb78c8.app-imersao-nativa.pages.dev)
+const platformOriginRe = /^https:\/\/([a-z0-9-]+\.)?app-imersao-nativa\.pages\.dev$/;
 
 app.use(cors({
   origin: (origin, callback) => {
     if (!origin) return callback(null, true);
     if (allowedOrigins.includes(origin)) return callback(null, true);
+    if (platformOriginRe.test(origin)) return callback(null, true);
     console.warn(`[CORS] Origem bloqueada: ${origin}`);
     callback(new Error(`CORS: origem não permitida: ${origin}`));
   },
