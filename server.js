@@ -31,11 +31,13 @@ const allowedOrigins = [
   'https://app.espanholcomvoce.com',
   'https://imersao-nativa.espanholcvfaixapreta.workers.dev',
   'https://app-imersao-nativa.pages.dev',
+  'https://imersao-nativa-plataforma.pages.dev',
 ].filter(Boolean);
 
 // Plataforma Imersão Nativa em Cloudflare Pages: produção + deploys de preview
 // (subdomínios com hash, ex.: 7afb78c8.app-imersao-nativa.pages.dev)
-const platformOriginRe = /^https:\/\/([a-z0-9-]+\.)?app-imersao-nativa\.pages\.dev$/;
+// Cobre a home (app-imersao-nativa) e a cópia do app de prática (imersao-nativa-plataforma).
+const platformOriginRe = /^https:\/\/([a-z0-9-]+\.)?(app-imersao-nativa|imersao-nativa-plataforma)\.pages\.dev$/;
 
 app.use(cors({
   origin: (origin, callback) => {
