@@ -7,7 +7,10 @@
  *
  * Rotas (todas exigem token):
  *   GET  /api/progreso        -> devolve todas as chaves do aluno
- *   PUT  /api/progreso        -> grava várias chaves de uma vez (merge)
+ *   POST /api/progreso        -> grava várias chaves de uma vez (merge)
+ *
+ * Usamos POST (e não PUT) de propósito: o CORS do servidor só libera
+ * GET/POST/OPTIONS, e mexer nisso afetaria o app original.
  *
  * Formato: { chave: <valor JSON> }. Cada tela decide quais chaves usa
  * (sre_cards, lec_done_B1, in_prod_stats, ...), então adicionar uma tela nova
@@ -63,7 +66,7 @@ router.get('/', authMiddleware, async (req, res) => {
 });
 
 // ── Gravar (merge) ────────────────────────────────────────────────────────
-router.put('/', authMiddleware, async (req, res) => {
+router.post('/', authMiddleware, async (req, res) => {
   if (!pool) return res.json({ success: true, guardadas: 0, sinBase: true });
   try {
     await garantirTabela();
