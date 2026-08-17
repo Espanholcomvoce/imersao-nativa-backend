@@ -17,7 +17,7 @@ router.post('/chat', auth, async (req, res) => {
   const { message, history = [], level, situation, isFirst } = req.body;
   // Modelo de prueba (whitelist): para comparar candidatos en vivo sin tocar
   // el default. Cuando se elija el ganador, se cambia el default y ya.
-  const MODELOS = new Set(['gpt-4o-mini', 'gpt-5.4-nano', 'gpt-5.4-mini', 'gpt-5-nano', 'gpt-5-mini', 'gpt-4.1-mini']);
+  const MODELOS = new Set(['gpt-4o-mini', 'gpt-4.1-mini', 'gpt-5.6-luna']);
   const modelo = MODELOS.has(req.body.modelo) ? req.body.modelo : 'gpt-4o-mini';
   // cómo quiere ser llamado el alumno (viene del perfil; opcional y aditivo)
   const nombre = String(req.body.nombre || '').trim().slice(0, 40);

@@ -63,7 +63,7 @@ router.post('/token', authWithRevalidation, async (req, res) => {
 
   const { level, situation } = req.body || {};
   const nombre = String(req.body.nombre || '').trim().slice(0, 40);
-  const RT_MODELOS = new Set(['gpt-realtime', 'gpt-realtime-mini']);
+  const RT_MODELOS = new Set(['gpt-realtime', 'gpt-realtime-mini', 'gpt-realtime-2.1-mini']);
   const rtModelo = RT_MODELOS.has(req.body.modelo) ? req.body.modelo : 'gpt-realtime';
 
   const sitMap = {
