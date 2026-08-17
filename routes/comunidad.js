@@ -249,11 +249,11 @@ async function moderarYClasificar(titulo, texto, categoria) {
 
 // ── Matías responde preguntas huérfanas (firmando como Matías) ───────────
 async function matiasResponde() {
-  if (!anthropic || !pool) return;
+  if (!anthropic || !pool) return { paso: 'sin anthropic o sin pool' };
   try {
     const hoy = await pool.query(
       `SELECT COUNT(*)::int AS n FROM community_comments WHERE matias AND created_at > NOW() - interval '1 day'`);
-    if (hoy.rows[0].n >= MAX_MATIAS_DIA) return;
+    if (hoy.rows[0].n >= MAX_MATIAS_DIA) return { paso: 'tope diario' };
 
     // Toma UNA pregunta sin respuesta con más de 3 horas, y la marca ya
     // (así dos peticiones simultáneas no generan doble respuesta).
@@ -267,7 +267,7 @@ async function matiasResponde() {
            AND NOT EXISTS (SELECT 1 FROM community_comments c WHERE c.post_id = p.id)
          ORDER BY p.created_at ASC LIMIT 1)
        RETURNING id, titulo, texto`);
-    if (!rows.length) return;
+    if (!rows.length) return { paso: 'sin huerfanas' };
     const post = rows[0];
 
     const r = await anthropic.messages.create({
@@ -281,16 +281,27 @@ async function matiasResponde() {
       messages: [{ role: 'user', content: `${post.titulo}\n\n${post.texto}` }]
     });
     const texto = r.content.map(b => b.text || '').join('').trim().slice(0, MAX_COMENTARIO);
-    if (!texto) return;
+    if (!texto) return { paso: 'respuesta vacia', post: post.id };
     await pool.query(
       `INSERT INTO community_comments (post_id, email, nombre, texto, matias)
        VALUES ($1, 'matias@imersao.interna', 'Matías · Asistente del programa', $2, TRUE)`,
       [post.id, texto]);
     console.log(`[COMUNIDAD] Matías respondió el post ${post.id}`);
+    return { paso: 'respondido', post: post.id };
   } catch (err) {
     console.warn('[COMUNIDAD] Matías no pudo responder:', err.message);
+    return { paso: 'ERROR', error: err.message };
   }
 }
+
+// ── Depuración temporal (se quita tras verificar en producción) ──────────
+router.get('/matias-debug', authMiddleware, async (req, res) => {
+  if (req.query.rearmar === '1') {
+    await pool.query('UPDATE community_posts SET matias_respondido = FALSE WHERE NOT seed');
+  }
+  const r = await matiasResponde();
+  res.json({ success: true, resultado: r });
+});
 
 // ── Feed ──────────────────────────────────────────────────────────────────
 router.get('/feed', authMiddleware, async (req, res) => {
