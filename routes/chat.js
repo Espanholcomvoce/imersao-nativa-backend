@@ -138,7 +138,7 @@ router.post('/', authWithRevalidation, async (req, res) => {
       messages
     });
 
-    const reply = response.content[0]?.text || '';
+    const reply = response.content.filter(b => b.type === 'text').map(b => b.text).join('').trim();
 
     console.log(`[CHAT] ${req.user.email} | ctx:${selectedContext} | nivel:${selectedLevel} | tokens:${response.usage.input_tokens}+${response.usage.output_tokens}`);
 
@@ -196,7 +196,7 @@ router.post('/correction', authWithRevalidation, async (req, res) => {
 
     res.json({
       success: true,
-      correction: response.content[0]?.text || ''
+      correction: response.content.filter(b => b.type === 'text').map(b => b.text).join('').trim()
     });
 
   } catch (err) {

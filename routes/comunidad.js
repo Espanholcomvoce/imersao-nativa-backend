@@ -264,7 +264,7 @@ async function matiasResponde() {
          SELECT p.id FROM community_posts p
          WHERE NOT p.matias_respondido AND NOT p.seed
            AND (p.categoria = 'preguntas' OR p.titulo LIKE '%?%' OR p.texto LIKE '%?%')
-           AND p.created_at < NOW() - interval '1 minute'
+           AND p.created_at < NOW() - interval '3 hours'
            AND NOT EXISTS (SELECT 1 FROM community_comments c WHERE c.post_id = p.id)
          ORDER BY p.created_at ASC LIMIT 1)
        RETURNING id, titulo, texto`);
@@ -300,14 +300,6 @@ async function matiasResponde() {
   }
 }
 
-// ── Depuración temporal (se quita tras verificar en producción) ──────────
-router.get('/matias-debug', authMiddleware, async (req, res) => {
-  if (req.query.rearmar === '1') {
-    await pool.query('UPDATE community_posts SET matias_respondido = FALSE WHERE NOT seed');
-  }
-  const r = await matiasResponde();
-  res.json({ success: true, resultado: r });
-});
 
 // ── Feed ──────────────────────────────────────────────────────────────────
 router.get('/feed', authMiddleware, async (req, res) => {
