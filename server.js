@@ -117,6 +117,11 @@ app.use('/api/admin', require('./routes/admin'));
 app.use('/api/track', require('./routes/track'));
 app.use('/api/progreso', require('./routes/progreso'));
 app.use('/api/comunidad', require('./routes/comunidad'));
+// Rutas PARALELAS de la plataforma nueva (Paula mejorada). Las rutas
+// originales /api/conversa y /api/realtime quedan congeladas para el app
+// de los alumnos actuales — decision de Ale del 17/8.
+app.use('/api/conversa2', require('./routes/conversa2'));
+app.use('/api/realtime2', require('./routes/realtime2'));
 
 app.use((err, req, res, next) => {
   console.error(`[ERROR] ${req.method} ${req.path}`, err.message);

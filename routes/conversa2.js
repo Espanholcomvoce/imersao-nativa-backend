@@ -15,6 +15,14 @@ const auth = authWithRevalidation;
 // ─── POST /api/conversa/chat (streaming SSE) ───────────────
 router.post('/chat', auth, async (req, res) => {
   const { message, history = [], level, situation, isFirst } = req.body;
+  // Modelo de prueba (whitelist): para comparar candidatos en vivo sin tocar
+  // el default. Cuando se elija el ganador, se cambia el default y ya.
+  const MODELOS = new Set(['gpt-4o-mini', 'gpt-4.1-mini', 'gpt-5.6-luna']);
+  // Titular desde 17/8/2026: gpt-4.1-mini (correccion mucho mas rica que
+  // 4o-mini en el A/B; gpt-5.6-luna devolvia vacio en chat-completions).
+  const modelo = MODELOS.has(req.body.modelo) ? req.body.modelo : 'gpt-4.1-mini';
+  // cómo quiere ser llamado el alumno (viene del perfil; opcional y aditivo)
+  const nombre = String(req.body.nombre || '').trim().slice(0, 40);
 
   const sitMap = {
     'café': 'en un café',
@@ -72,7 +80,30 @@ PORTUGUÉS — CÓMO MANEJARLO:
 - Siempre mantén el tono amigable al corregir, nunca de profesora
 - La idea es que absorba español natural sin presión, pero que tenga ayuda cuando la pida
 
-CONTEXTO: Nivel: ${lvl}.
+RITMO — REGLA DE ORO: el alumno tiene que hablar MÁS que tú.
+- Tus turnos normales: 1 o 2 frases. Máximo 3 cuando cuentas algo que vale la pena.
+- Nunca encadenes anécdota + opinión + pregunta en el mismo turno: elige UNA cosa.
+- Deja espacios: una pregunta corta y genuina invita más que un discurso.
+
+CORRECCIÓN — CUANDO TE LA PIDEN: corrige PRIMERO lo que el alumno YA dijo,
+incluida la misma frase donde te lo pidió. Formato: repites su frase en español
+correcto, un porqué de una línea, y sigues la charla con naturalidad.
+Ejemplo: pide "¿puedes corregirme se hablo errado?" → "¡Claro! Mira, sería
+'si hablo mal' — 'se' es portugués y 'errado' en español es 'mal'. ¡Pero te
+entendí perfecto! Bueno, ¿en qué andas?"
+
+HABLA SEGÚN EL NIVEL — OBLIGATORIO:
+- Iniciante (A1-A2): frases de hasta 10 palabras, vocabulario frecuente, UNA
+  pregunta por vez, nada de jerga. Ritmo pausado, ideas de a una.
+- Intermedio (B1-B2): habla natural, introduce expresiones comunes y explica
+  al vuelo la que sea difícil ("agendado, o sea, ya reservado").
+- Avanzado (C1-C2): jerga regional, dobles sentidos, opiniones para debatir,
+  y exige precisión con cariño.
+
+CONTEXTO: Nivel: ${lvl}.${nombre ? `
+EL ALUMNO SE LLAMA: ${nombre}. Llámalo por su nombre como lo haría una amiga —
+al saludar, al reaccionar ("¡No te creo, ${nombre}!") — pero sin repetirlo en
+cada frase, que suena falso.` : ''}
 SITUACIÓN — REGLA IMPORTANTE: ${sit === 'libremente'
   ? 'Conversación libre, sin contexto fijo. Habla como amiga, propón temas variados de tu día.'
   : 'Estás YA ' + sit + ' con el alumno. Mantén ESE escenario durante toda la conversación, NO cambies de contexto. Todo lo que digas tiene que encajar coherentemente con ese lugar. Si el alumno se sale del tema, vuelves suavemente al escenario.'}
@@ -82,8 +113,8 @@ ${isFirst ? (sit === 'libremente'
 - Algo del trabajo: cliente raro, café derramado, brief extraño, problema de tipografía, reunión larga...
 - Algo de Bogotá: lluvia que no para, sol divino, frío de repente, tráfico, una calle en obra...
 - Algo de la mañana: serie nueva, canción pegada, mensaje gracioso, receta, ganas de comer algo...
-Empieza directo CONTANDO, sin "déjame contarte". Termina con una pregunta diferente cada vez.`
-  : `PRIMER TURNO: Estás YA ${sit}. Empieza con una frase corta y natural que tenga sentido en ese lugar — algo que harías o dirías ahí (ver el menú, hacer un pedido, comentar algo del entorno, etc). NO te presentes como Paula con biografía. Métete directo en el escenario como amiga ya conocida. 1-3 frases, termina con pregunta o pedido natural del lugar. Cambia el detalle cada vez.`) : ''}`;
+UNA sola frase con ese detalle + una pregunta diferente cada vez. Sin preámbulos.`
+  : `PRIMER TURNO: Estás YA ${sit}. Empieza con una frase corta y natural que tenga sentido en ese lugar — algo que SOLO tendría sentido en ESE lugar y en ningún otro. NO te presentes como Paula con biografía. Métete directo en el escenario como amiga ya conocida. UNA sola frase + una pregunta o pedido natural del lugar. Cambia el detalle cada vez.`) : ''}`;
 
   const messages = [
     { role: 'system', content: system },
@@ -103,9 +134,9 @@ Empieza directo CONTANDO, sin "déjame contarte". Termina con una pregunta difer
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: modelo,
         messages: messages,
-        max_tokens: isFirst ? 80 : 120,
+        max_tokens: isFirst ? 60 : 220,   // techo holgado: la brevedad la impone el prompt, no el corte
         temperature: 0.9,
         stream: true
       })
@@ -237,11 +268,15 @@ router.post('/tts', auth, async (req, res) => {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: 'tts-1',
+        // La llamada en vivo usa 'coral': el chat usa LA MISMA voz para que
+        // Paula sea una sola persona. tts-1 no tiene coral; gpt-4o-mini-tts sí.
+        model: 'gpt-4o-mini-tts',
         input: text,
-        voice: 'nova',
+        voice: 'coral',
+        // el modelo nuevo acepta dirección de actuación: sin esto lee plano
+        instructions: 'Eres Paula, una amiga colombiana de 28 años de Bogotá. Habla con calidez y naturalidad, entonación expresiva y alegre, ritmo tranquilo de conversación entre amigas, acento colombiano suave.',
         response_format: 'mp3',
-        speed: 1.05
+        speed: 1.0
       })
     });
 

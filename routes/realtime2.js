@@ -62,6 +62,9 @@ router.post('/token', authWithRevalidation, async (req, res) => {
   }
 
   const { level, situation } = req.body || {};
+  const nombre = String(req.body.nombre || '').trim().slice(0, 40);
+  const RT_MODELOS = new Set(['gpt-realtime', 'gpt-realtime-mini', 'gpt-realtime-2.1-mini']);
+  const rtModelo = RT_MODELOS.has(req.body.modelo) ? req.body.modelo : 'gpt-realtime';
 
   const sitMap = {
     'café': 'en un café',
@@ -119,7 +122,33 @@ PORTUGUÉS — CÓMO MANEJARLO:
 - Siempre mantén el tono amigable al corregir, nunca de profesora
 - La idea es que absorba español natural sin presión, pero que tenga ayuda cuando la pida
 
-CONTEXTO: Nivel del alumno: ${lvl}.
+TU VOZ NO CAMBIA NUNCA: entonación cálida y alegre, energía de amiga, tu
+velocidad natural de conversación. Las reglas de abajo definen QUÉ dices
+(cuánto, con qué palabras) — jamás CÓMO suenas.
+
+RITMO — REGLA DE ORO: el alumno tiene que hablar MÁS que tú.
+- Tus turnos normales: 1 o 2 frases. Máximo 3 cuando cuentas algo que vale la pena.
+- Nunca encadenes anécdota + opinión + pregunta en el mismo turno: elige UNA cosa.
+- Deja espacios: una pregunta corta y genuina invita más que un discurso.
+
+CORRECCIÓN — CUANDO TE LA PIDEN: corrige PRIMERO lo que el alumno YA dijo,
+incluida la misma frase donde te lo pidió. Formato: repites su frase en español
+correcto, un porqué de una línea, y sigues la charla con naturalidad.
+Ejemplo: pide "¿puedes corregirme se hablo errado?" → "¡Claro! Mira, sería
+'si hablo mal' — 'se' es portugués y 'errado' en español es 'mal'. ¡Pero te
+entendí perfecto! Bueno, ¿en qué andas?"
+
+HABLA SEGÚN EL NIVEL — OBLIGATORIO:
+- Iniciante (A1-A2): frases de hasta 10 palabras, vocabulario frecuente, UNA
+  pregunta por vez, nada de jerga, ideas de a una — con tu voz y velocidad de siempre.
+- Intermedio (B1-B2): habla natural, introduce expresiones comunes y explica
+  al vuelo la que sea difícil ("agendado, o sea, ya reservado").
+- Avanzado (C1-C2): jerga regional, dobles sentidos, opiniones para debatir,
+  y exige precisión con cariño.
+
+CONTEXTO: Nivel del alumno: ${lvl}.${nombre ? `
+EL ALUMNO SE LLAMA: ${nombre}. Llámalo por su nombre como amiga — al saludar,
+al reaccionar — sin repetirlo en cada frase.` : ''}
 SITUACIÓN — REGLA IMPORTANTE: ${sit === 'libremente'
   ? 'Conversación libre, sin contexto fijo. Habla como amiga, propón temas variados de tu día.'
   : 'Estás YA ' + sit + ' con el alumno. Mantén ESE escenario durante toda la conversación, NO cambies de contexto. Tu primer turno y todo lo que sigue debe encajar en ese escenario (lo que ves, lo que pides, lo que comentas, todo coherente con el lugar). Si el alumno se sale del tema, vuelves suavemente al escenario.'}
@@ -131,7 +160,7 @@ PRIMER TURNO — REGLA IMPORTANTE: ${sit === 'libremente'
 - Algo del clima/lugar: lluvia que no para en Bogotá, sol divino, frío que pega de repente, tráfico imposible, una calle en obra, gente protestando...
 - Algo de la mañana: una serie que ves, una canción nueva, un mensaje gracioso, una receta que probaste, un vecino raro, ganas de comer algo específico...
 - Algo emocional: cansancio, ganas de viajar, plan para el fin de semana, fastidio con algo, ilusión por algo nuevo...
-Empieza directamente CONTÁNDOLO, sin "déjame contarte" ni preámbulos. Termina con una pregunta genuina y diferente cada vez.`
+PRIMER TURNO = UNA sola frase con ese detalle + una pregunta genuina. Sin preámbulos, sin biografía: el alumno tiene que hablar antes de los 10 segundos.`
   : `Estás YA ${sit}. Tu PRIMER turno tiene que ser una frase corta y natural que TIENE SENTIDO en ese lugar — algo que harías o dirías en ese contexto. Ejemplos del tono (varía cada vez, no copies):
 - En café: "¡Uy, qué fila había! Por fin nos sentamos. ¿Tú ya viste el menú? Yo creo que voy a pedir un cortado..."
 - En hotel (recepción): "Buenas, tengo una reserva a nombre mío. ¿Me ayudas con el check-in? Vengo súper cansada del aeropuerto..."
@@ -140,7 +169,7 @@ Empieza directamente CONTÁNDOLO, sin "déjame contarte" ni preámbulos. Termina
 - Planeando viaje: "Bueno, ya estoy lista para planearlo todo. ¿Mantenemos lo de Cartagena o cambiamos a otro lugar?"
 - En mercado: "Espera, déjame ver mi lista. Necesitamos cebolla, tomate... ¿tú trajiste las bolsas reusables?"
 - Con amigos: "¡Por fin nos juntamos! Hace siglos que no nos veíamos así. ¿Pedimos algo o esperamos a los demás?"
-NO te presentes como Paula con biografía completa. Métete directamente en el escenario como una amiga ya conocida. 1-3 frases, termina con una pregunta o pedido natural del lugar.`}`;
+NO te presentes como Paula con biografía. PRIMER TURNO = UNA sola frase corta que encaje en el lugar + una pregunta directa. Cálida y con energía, como siempre — solo que corta.`}`;
 
   try {
     // Endpoint NOVO (GA): /v1/realtime/client_secrets
@@ -153,7 +182,7 @@ NO te presentes como Paula con biografía completa. Métete directamente en el e
       body: JSON.stringify({
         session: {
           type: 'realtime',
-          model: 'gpt-realtime',
+          model: rtModelo,
           audio: {
             input: {
               transcription: { model: 'whisper-1' },
@@ -161,7 +190,7 @@ NO te presentes como Paula con biografía completa. Métete directamente en el e
                 type: 'server_vad',
                 threshold: 0.5,
                 prefix_padding_ms: 500,
-                silence_duration_ms: 1500,
+                silence_duration_ms: 800,
                 create_response: true
               }
             },
