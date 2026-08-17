@@ -268,15 +268,14 @@ router.post('/tts', auth, async (req, res) => {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        // La llamada en vivo usa 'coral': el chat usa LA MISMA voz para que
-        // Paula sea una sola persona. tts-1 no tiene coral; gpt-4o-mini-tts sí.
-        model: 'gpt-4o-mini-tts',
+        // Voz del chat: la de ayer (tts-1/nova). Los intentos con coral via
+        // gpt-4o-mini-tts no convencieron a Ale; la referencia de calidad es
+        // la voz del realtime, que tiene su propia receta congelada.
+        model: 'tts-1',
         input: text,
-        voice: 'coral',
-        // el modelo nuevo acepta dirección de actuación: sin esto lee plano
-        instructions: 'Eres Paula, una amiga colombiana de 28 años de Bogotá. Habla con calidez y naturalidad, entonación expresiva y alegre, ritmo tranquilo de conversación entre amigas, acento colombiano suave.',
+        voice: 'nova',
         response_format: 'mp3',
-        speed: 1.0
+        speed: 1.05
       })
     });
 
