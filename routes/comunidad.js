@@ -436,6 +436,26 @@ router.post('/reaccionar', authMiddleware, async (req, res) => {
   }
 });
 
+// ── Borrar una publicación propia ────────────────────────────────────────
+// (POST y no DELETE por el CORS del servidor; los comentarios y reacciones
+//  caen solos por el ON DELETE CASCADE.)
+router.post('/borrar', authMiddleware, async (req, res) => {
+  if (!pool) return res.status(503).json({ error: 'Sin base de datos.' });
+  try {
+    await garantirTablas();
+    const email = (req.user.email || '').toLowerCase();
+    const postId = parseInt(req.body?.post_id, 10);
+    if (!postId) return res.status(400).json({ error: 'Falta post_id.' });
+    const del = await pool.query(
+      'DELETE FROM community_posts WHERE id = $1 AND email = $2 AND NOT seed', [postId, email]);
+    if (!del.rowCount) return res.status(404).json({ error: 'Sólo puedes borrar tus propias publicaciones.' });
+    res.json({ success: true });
+  } catch (err) {
+    console.error('[COMUNIDAD] borrar:', err.message);
+    res.status(500).json({ error: 'Error al borrar.' });
+  }
+});
+
 // ── Mi actividad ──────────────────────────────────────────────────────────
 router.get('/actividad', authMiddleware, async (req, res) => {
   if (!pool) return res.json({ success: true, posts: [], comentarios: [], guardados: [], sinBase: true });
