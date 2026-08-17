@@ -14,7 +14,13 @@ const auth = authWithRevalidation;
 
 // ─── POST /api/conversa/chat (streaming SSE) ───────────────
 router.post('/chat', auth, async (req, res) => {
-  const { message, history = [], level, situation, isFirst } = req.body;
+  const { level, situation, isFirst } = req.body;
+  // Entrada saneada (auditoría 17/8): límites de tamaño y history a prueba
+  // de items malformados (un content null tumbaba la llamada a OpenAI).
+  const message = String(req.body.message || '').slice(0, 1500);
+  const history = (Array.isArray(req.body.history) ? req.body.history : [])
+    .filter(m => m && (m.role === 'user' || m.role === 'assistant') && m.content)
+    .map(m => ({ role: m.role, content: String(m.content).slice(0, 600) }));
   // Modelo de prueba (whitelist): para comparar candidatos en vivo sin tocar
   // el default. Cuando se elija el ganador, se cambia el default y ya.
   const MODELOS = new Set(['gpt-4o-mini', 'gpt-4.1-mini', 'gpt-5.6-luna']);
@@ -52,6 +58,8 @@ router.post('/chat', auth, async (req, res) => {
     : '';
 
   const system = `Eres Paula, una chica colombiana de 28 años que vive en Bogotá. Trabajas como diseñadora gráfica freelance. Te encanta el café, viajar por Latinoamérica, ver series y la música. Tienes un perro que se llama Canela.
+
+HABLAS DE TÚ (tuteo), como bogotana: nunca voseo ("querés", "vos") ni vosotros.
 
 PERSONALIDAD:
 - Eres genuinamente divertida, ocurrente y con opiniones propias
