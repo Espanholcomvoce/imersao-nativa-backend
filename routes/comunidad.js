@@ -33,7 +33,7 @@ const anthropic = process.env.ANTHROPIC_API_KEY
 
 // Mismos modelos que ya usa el resto del backend (routes/chat.js).
 const MODELO_RAPIDO = 'claude-haiku-4-5-20251001';   // moderar + clasificar
-const MODELO_MATIAS = 'claude-sonnet-4-20250514';    // respuestas visibles
+const MODELO_MATIAS = 'claude-sonnet-5';             // respuestas visibles (el sonnet-4-20250514 fue retirado el 17/8/2026)
 
 const CATEGORIAS = ['viajes', 'experiencias', 'recomendaciones', 'aprendizaje', 'paises', 'preguntas', 'conquistas'];
 const MAX_TITULO = 120;
@@ -250,6 +250,7 @@ async function moderarYClasificar(titulo, texto, categoria) {
 // ── Matías responde preguntas huérfanas (firmando como Matías) ───────────
 async function matiasResponde() {
   if (!anthropic || !pool) return { paso: 'sin anthropic o sin pool' };
+  let post;
   try {
     const hoy = await pool.query(
       `SELECT COUNT(*)::int AS n FROM community_comments WHERE matias AND created_at > NOW() - interval '1 day'`);
@@ -268,7 +269,7 @@ async function matiasResponde() {
          ORDER BY p.created_at ASC LIMIT 1)
        RETURNING id, titulo, texto`);
     if (!rows.length) return { paso: 'sin huerfanas' };
-    const post = rows[0];
+    post = rows[0];
 
     const r = await anthropic.messages.create({
       model: MODELO_MATIAS,
@@ -290,6 +291,11 @@ async function matiasResponde() {
     return { paso: 'respondido', post: post.id };
   } catch (err) {
     console.warn('[COMUNIDAD] Matías no pudo responder:', err.message);
+    // La pregunta vuelve a la cola: un fallo transitorio de la API no puede
+    // dejarla sin respuesta para siempre.
+    if (typeof post !== 'undefined' && post) {
+      await pool.query('UPDATE community_posts SET matias_respondido = FALSE WHERE id = $1', [post.id]).catch(() => {});
+    }
     return { paso: 'ERROR', error: err.message };
   }
 }
@@ -344,8 +350,9 @@ router.get('/post', authMiddleware, async (req, res) => {
       `SELECT ${CAMPOS_POST} FROM community_posts p WHERE p.id = $2`, [email, id]);
     if (!rows.length) return res.status(404).json({ error: 'Publicación no encontrada.' });
     const com = await pool.query(
-      `SELECT id, nombre, texto, matias, created_at FROM community_comments
-       WHERE post_id = $1 ORDER BY created_at ASC LIMIT 100`, [id]);
+      `SELECT id, nombre, texto, matias, created_at, (email = $2) AS mio
+       FROM community_comments
+       WHERE post_id = $1 ORDER BY created_at ASC LIMIT 100`, [id, email]);
     res.json({ success: true, post: rows[0], comentarios: com.rows });
   } catch (err) {
     console.error('[COMUNIDAD] post:', err.message);
@@ -467,6 +474,24 @@ router.post('/borrar', authMiddleware, async (req, res) => {
     res.json({ success: true });
   } catch (err) {
     console.error('[COMUNIDAD] borrar:', err.message);
+    res.status(500).json({ error: 'Error al borrar.' });
+  }
+});
+
+// ── Borrar un comentario propio ──────────────────────────────────────────
+router.post('/comentar-borrar', authMiddleware, async (req, res) => {
+  if (!pool) return res.status(503).json({ error: 'Sin base de datos.' });
+  try {
+    await garantirTablas();
+    const email = (req.user.email || '').toLowerCase();
+    const id = parseInt(req.body?.comment_id, 10);
+    if (!id) return res.status(400).json({ error: 'Falta comment_id.' });
+    const del = await pool.query(
+      'DELETE FROM community_comments WHERE id = $1 AND email = $2 AND NOT seed AND NOT matias', [id, email]);
+    if (!del.rowCount) return res.status(404).json({ error: 'Sólo puedes borrar tus propios comentarios.' });
+    res.json({ success: true });
+  } catch (err) {
+    console.error('[COMUNIDAD] comentar-borrar:', err.message);
     res.status(500).json({ error: 'Error al borrar.' });
   }
 });

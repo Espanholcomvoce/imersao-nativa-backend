@@ -128,7 +128,7 @@ router.post('/', authWithRevalidation, async (req, res) => {
   try {
     // Modelo rápido para tareas simples y para Matías, Sonnet para conversación
     const fastContexts = ['vocabulary', 'correction', 'matias'];
-    const model = fastContexts.includes(selectedContext) ? 'claude-haiku-4-5-20251001' : 'claude-sonnet-4-20250514';
+    const model = fastContexts.includes(selectedContext) ? 'claude-haiku-4-5-20251001' : 'claude-sonnet-5' /* sonnet-4-20250514 retirado 17/8/2026: daba 404 y el chat fallaba */;
     const maxTokens = selectedContext === 'matias' ? 700 : 500;
 
     const response = await anthropic.messages.create({
