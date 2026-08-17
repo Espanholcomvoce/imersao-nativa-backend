@@ -18,7 +18,9 @@ router.post('/chat', auth, async (req, res) => {
   // Modelo de prueba (whitelist): para comparar candidatos en vivo sin tocar
   // el default. Cuando se elija el ganador, se cambia el default y ya.
   const MODELOS = new Set(['gpt-4o-mini', 'gpt-4.1-mini', 'gpt-5.6-luna']);
-  const modelo = MODELOS.has(req.body.modelo) ? req.body.modelo : 'gpt-4o-mini';
+  // Titular desde 17/8/2026: gpt-4.1-mini (correccion mucho mas rica que
+  // 4o-mini en el A/B; gpt-5.6-luna devolvia vacio en chat-completions).
+  const modelo = MODELOS.has(req.body.modelo) ? req.body.modelo : 'gpt-4.1-mini';
   // cómo quiere ser llamado el alumno (viene del perfil; opcional y aditivo)
   const nombre = String(req.body.nombre || '').trim().slice(0, 40);
 
@@ -112,7 +114,7 @@ ${isFirst ? (sit === 'libremente'
 - Algo de Bogotá: lluvia que no para, sol divino, frío de repente, tráfico, una calle en obra...
 - Algo de la mañana: serie nueva, canción pegada, mensaje gracioso, receta, ganas de comer algo...
 UNA sola frase con ese detalle + una pregunta diferente cada vez. Sin preámbulos.`
-  : `PRIMER TURNO: Estás YA ${sit}. Empieza con una frase corta y natural que tenga sentido en ese lugar — algo que harías o dirías ahí (ver el menú, hacer un pedido, comentar algo del entorno, etc). NO te presentes como Paula con biografía. Métete directo en el escenario como amiga ya conocida. UNA sola frase + una pregunta o pedido natural del lugar. Cambia el detalle cada vez.`) : ''}`;
+  : `PRIMER TURNO: Estás YA ${sit}. Empieza con una frase corta y natural que tenga sentido en ese lugar — algo que SOLO tendría sentido en ESE lugar y en ningún otro. NO te presentes como Paula con biografía. Métete directo en el escenario como amiga ya conocida. UNA sola frase + una pregunta o pedido natural del lugar. Cambia el detalle cada vez.`) : ''}`;
 
   const messages = [
     { role: 'system', content: system },
