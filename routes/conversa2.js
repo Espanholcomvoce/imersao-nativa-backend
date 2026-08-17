@@ -23,6 +23,7 @@ router.post('/chat', auth, async (req, res) => {
   const modelo = MODELOS.has(req.body.modelo) ? req.body.modelo : 'gpt-4.1-mini';
   // cómo quiere ser llamado el alumno (viene del perfil; opcional y aditivo)
   const nombre = String(req.body.nombre || '').trim().slice(0, 40);
+  const memoria = String(req.body.memoria || '').trim().slice(0, 600);
 
   const sitMap = {
     'café': 'en un café',
@@ -100,7 +101,9 @@ HABLA SEGÚN EL NIVEL — OBLIGATORIO:
 - Avanzado (C1-C2): jerga regional, dobles sentidos, opiniones para debatir,
   y exige precisión con cariño.
 
-CONTEXTO: Nivel: ${lvl}.${nombre ? `
+CONTEXTO: Nivel: ${lvl}.${memoria ? `
+LO QUE RECUERDAS DEL ALUMNO (de charlas anteriores; úsalo con naturalidad,
+como amiga que se acuerda, sin recitarlo): ${memoria}` : ''}${nombre ? `
 EL ALUMNO SE LLAMA: ${nombre}. Llámalo por su nombre como lo haría una amiga —
 al saludar, al reaccionar ("¡No te creo, ${nombre}!") — pero sin repetirlo en
 cada frase, que suena falso.` : ''}
@@ -184,6 +187,59 @@ UNA sola frase con ese detalle + una pregunta diferente cada vez. Sin preámbulo
     console.error('[CONVERSA chat]', e.message);
     res.write('data: ' + JSON.stringify({ error: 'Erro interno.' }) + '\n\n');
     res.end();
+  }
+});
+
+// ─── POST /api/conversa2/cierre ─────────────────────────────
+// Al terminar la charla: informe corto + errores como tarjetas para el SRE
+// + memoria compacta para que Paula recuerde al alumno la próxima vez.
+router.post('/cierre', auth, async (req, res) => {
+  const { history = [], level, nombre = '' } = req.body;
+  const charla = history.slice(-40).map(m =>
+    (m.role === 'user' ? 'ALUMNO: ' : 'PAULA: ') + String(m.content || '').slice(0, 400)).join('
+');
+  if (!charla || history.filter(m => m.role === 'user').length < 2) {
+    return res.json({ success: true, vacio: true });
+  }
+  try {
+    const r = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + OPENAI_API_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'gpt-4.1-mini',
+        max_tokens: 900,
+        temperature: 0.3,
+        response_format: { type: 'json_object' },
+        messages: [
+          { role: 'system', content:
+            'Eres profesora de español para brasileños. Analiza la conversación entre el ALUMNO y PAULA. ' +
+            'Responde SOLO un JSON con estas claves: ' +
+            '"resumen": 2 frases en español simple dirigidas al alumno sobre cómo le fue hoy; ' +
+            '"bien": lista de 1-3 cosas concretas que el alumno hizo bien (frases cortas en español); ' +
+            '"errores": lista (máx 5) de errores REALES del alumno, cada uno con ' +
+            '{"dijiste": la frase del alumno, "correcto": la frase corregida, "porque": explicación de UNA línea, ' +
+            '"tarjeta": {"word": la expresión española correcta clave (2-5 palabras), "translation": su traducción al portugués, "example": la frase corregida completa}}; ' +
+            'si no hubo errores, lista vacía; ' +
+            '"consejo": 1 frase de consejo cariñoso para la próxima; ' +
+            '"memoria": máx 350 caracteres en español, tercera persona, con lo que Paula debería recordar del alumno para la próxima charla (nombre, intereses, situación de vida, nivel real percibido, errores recurrentes). Sin markdown.' },
+          { role: 'user', content: 'Nivel declarado: ' + (level || 'intermedio') +
+            (nombre ? '. Nombre: ' + nombre : '') + '
+
+' + charla }
+        ]
+      })
+    });
+    if (!r.ok) {
+      console.error('[CONVERSA2 cierre]', await r.text());
+      return res.status(502).json({ error: 'No pudimos generar el informe.' });
+    }
+    const data = await r.json();
+    let j = {};
+    try { j = JSON.parse(data.choices[0].message.content); } catch (e) {}
+    res.json({ success: true, informe: j });
+  } catch (e) {
+    console.error('[CONVERSA2 cierre]', e.message);
+    res.status(500).json({ error: 'Error interno.' });
   }
 });
 
