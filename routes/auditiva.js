@@ -132,7 +132,11 @@ router.get('/audio/:episodeId/:sectionIndex', authMiddleware, async (req, res) =
       `${ELEVENLABS_BASE}/text-to-speech/${voiceConfig.voice_id}`,
       {
         text: text.trim(),
-        model_id: 'eleven_flash_v2_5',
+        // eleven_flash_v2_5 es rápido pero prioriza velocidad sobre pausas
+        // naturales (pensado para respuestas en vivo). Este audio se genera
+        // UNA sola vez y queda para siempre: no hay presión de latencia, así
+        // que usamos el modelo de mejor calidad, con respiración real.
+        model_id: 'eleven_multilingual_v2',
         voice_settings: voiceConfig.settings
       },
       {
