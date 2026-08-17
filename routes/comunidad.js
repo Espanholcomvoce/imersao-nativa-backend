@@ -220,7 +220,11 @@ async function moderarYClasificar(titulo, texto, categoria) {
         'Rechaza (permitido=false) únicamente: spam comercial, enlaces sospechosos, ofensas, ' +
         'acoso, contenido sexual, o datos personales sensibles (teléfono, dirección, documento). ' +
         'Errores de idioma NUNCA son motivo de rechazo. ' +
-        `"categoria" debe ser una de: ${CATEGORIAS.join(', ')}. ` +
+        '"categoria" debe ser una de: viajes (viajes y lugares), experiencias (trabajo, estudio y vida diaria), ' +
+        'recomendaciones (series, música, libros, podcasts), aprendizaje (métodos y rutinas de estudio), ' +
+        'paises (costumbres y expresiones de un país), preguntas (CUALQUIER duda dirigida a la comunidad, ' +
+        'aunque el tema sea otro), conquistas (logros personales del alumno). ' +
+        'Si el texto pide ayuda o termina en pregunta, la categoría es "preguntas". ' +
         '"pais" es el país hispano del que trata el texto, o "" si no aplica.',
       messages: [{ role: 'user', content: `Título: ${titulo}\n\nTexto: ${texto}\n\nCategoría elegida por el alumno: ${categoria}` }]
     });
@@ -255,7 +259,7 @@ async function matiasResponde() {
        WHERE id = (
          SELECT p.id FROM community_posts p
          WHERE p.categoria = 'preguntas' AND NOT p.matias_respondido AND NOT p.seed
-           AND p.created_at < NOW() - interval '3 hours'
+           AND p.created_at < NOW() - interval '1 minute'
            AND NOT EXISTS (SELECT 1 FROM community_comments c WHERE c.post_id = p.id)
          ORDER BY p.created_at ASC LIMIT 1)
        RETURNING id, titulo, texto`);
