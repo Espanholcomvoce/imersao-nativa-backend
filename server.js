@@ -120,8 +120,17 @@ app.use('/api/comunidad', require('./routes/comunidad'));
 // Rutas PARALELAS de la plataforma nueva (Paula mejorada). Las rutas
 // originales /api/conversa y /api/realtime quedan congeladas para el app
 // de los alumnos actuales — decision de Ale del 17/8.
-app.use('/api/conversa2', require('./routes/conversa2'));
-app.use('/api/realtime2', require('./routes/realtime2'));
+// BLINDAJE (17/8): las rutas nuevas se montan protegidas. Si una rota "2"
+// tiene un error, el servidor ARRANCA IGUAL sin ella y las rutas de los
+// alumnos siguen vivas. (Un error de sintaxis en conversa2 tumbo el server
+// unos minutos hoy; esto lo hace imposible de repetir.)
+for (const [ruta, archivo] of [['/api/conversa2', './routes/conversa2'], ['/api/realtime2', './routes/realtime2']]) {
+  try {
+    app.use(ruta, require(archivo));
+  } catch (err) {
+    console.error(`[BOOT] Ruta ${ruta} NO montada (error en ${archivo}):`, err.message);
+  }
+}
 
 app.use((err, req, res, next) => {
   console.error(`[ERROR] ${req.method} ${req.path}`, err.message);
