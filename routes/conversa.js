@@ -15,6 +15,10 @@ const auth = authWithRevalidation;
 // ─── POST /api/conversa/chat (streaming SSE) ───────────────
 router.post('/chat', auth, async (req, res) => {
   const { message, history = [], level, situation, isFirst } = req.body;
+  // Modelo de prueba (whitelist): para comparar candidatos en vivo sin tocar
+  // el default. Cuando se elija el ganador, se cambia el default y ya.
+  const MODELOS = new Set(['gpt-4o-mini', 'gpt-5.4-nano', 'gpt-5.4-mini', 'gpt-5-nano', 'gpt-5-mini', 'gpt-4.1-mini']);
+  const modelo = MODELOS.has(req.body.modelo) ? req.body.modelo : 'gpt-4o-mini';
   // cómo quiere ser llamado el alumno (viene del perfil; opcional y aditivo)
   const nombre = String(req.body.nombre || '').trim().slice(0, 40);
 
@@ -128,7 +132,7 @@ UNA sola frase con ese detalle + una pregunta diferente cada vez. Sin preámbulo
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: modelo,
         messages: messages,
         max_tokens: isFirst ? 60 : 220,   // techo holgado: la brevedad la impone el prompt, no el corte
         temperature: 0.9,
