@@ -196,8 +196,7 @@ UNA sola frase con ese detalle + una pregunta diferente cada vez. Sin preámbulo
 router.post('/cierre', auth, async (req, res) => {
   const { history = [], level, nombre = '' } = req.body;
   const charla = history.slice(-40).map(m =>
-    (m.role === 'user' ? 'ALUMNO: ' : 'PAULA: ') + String(m.content || '').slice(0, 400)).join('
-');
+    (m.role === 'user' ? 'ALUMNO: ' : 'PAULA: ') + String(m.content || '').slice(0, 400)).join('\n');
   if (!charla || history.filter(m => m.role === 'user').length < 2) {
     return res.json({ success: true, vacio: true });
   }
@@ -223,9 +222,7 @@ router.post('/cierre', auth, async (req, res) => {
             '"consejo": 1 frase de consejo cariñoso para la próxima; ' +
             '"memoria": máx 350 caracteres en español, tercera persona, con lo que Paula debería recordar del alumno para la próxima charla (nombre, intereses, situación de vida, nivel real percibido, errores recurrentes). Sin markdown.' },
           { role: 'user', content: 'Nivel declarado: ' + (level || 'intermedio') +
-            (nombre ? '. Nombre: ' + nombre : '') + '
-
-' + charla }
+            (nombre ? '. Nombre: ' + nombre : '') + '\n\n' + charla }
         ]
       })
     });
