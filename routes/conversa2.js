@@ -329,14 +329,15 @@ router.post('/tts', auth, async (req, res) => {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        // Voz del chat: la de ayer (tts-1/nova). Los intentos con coral via
-        // gpt-4o-mini-tts no convencieron a Ale; la referencia de calidad es
-        // la voz del realtime, que tiene su propia receta congelada.
-        model: 'tts-1',
+        // La llamada realtime usa la voz "coral" (receta congelada). Para que
+        // Paula suene como LA MISMA persona en el chat, acá también va coral,
+        // via gpt-4o-mini-tts con dirección de actuación (el problema de los
+        // intentos anteriores era la actuación plana, no el personaje de voz).
+        model: 'gpt-4o-mini-tts',
         input: text,
-        voice: 'nova',
-        response_format: 'mp3',
-        speed: 1.05
+        voice: 'coral',
+        instructions: 'Eres Paula, profesora bogotana cálida y cercana. Habla con naturalidad conversacional, ritmo tranquilo, tono amable y sonriente. Español neutro de Colombia.',
+        response_format: 'mp3'
       })
     });
 
