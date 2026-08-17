@@ -195,8 +195,11 @@ function nombreDe(req) {
   const n = (req.body?.nombre || '').toString().trim().slice(0, 60);
   if (n) return n;
   const email = (req.user?.email || '');
-  const base = email.split('@')[0].split(/[._\-+0-9]/)[0];
-  return base ? base.charAt(0).toUpperCase() + base.slice(1).toLowerCase() : 'Alumno';
+  const usuario = email.split('@')[0];
+  const base = usuario.split(/[._\-+0-9]/)[0];
+  const largoMax = /[._\-+]/.test(usuario) ? 14 : 10;
+  if (!base || base.length < 3 || base.length > largoMax) return 'Alumno';
+  return base.charAt(0).toUpperCase() + base.slice(1).toLowerCase();
 }
 
 const CAMPOS_POST = `
@@ -258,7 +261,8 @@ async function matiasResponde() {
       `UPDATE community_posts SET matias_respondido = TRUE
        WHERE id = (
          SELECT p.id FROM community_posts p
-         WHERE p.categoria = 'preguntas' AND NOT p.matias_respondido AND NOT p.seed
+         WHERE NOT p.matias_respondido AND NOT p.seed
+           AND (p.categoria = 'preguntas' OR p.titulo LIKE '%?%' OR p.texto LIKE '%?%')
            AND p.created_at < NOW() - interval '1 minute'
            AND NOT EXISTS (SELECT 1 FROM community_comments c WHERE c.post_id = p.id)
          ORDER BY p.created_at ASC LIMIT 1)
