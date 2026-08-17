@@ -72,8 +72,13 @@ const GUIDE_VOICES = {
   argentina:  { voice_id: '1WXz8v08ntDcSTeVXMN2', settings: SAFE },
   bolivia:    { voice_id: 'XB0fDUnXU5powFXDhCwa', settings: SAFE },
   chile:      { voice_id: 'Fd38GRHtJllY0CuguAy9', settings: SAFE },
-  colombia:   { voice_id: 'MqSrMUk8EHh32HBKytrG', settings: SAFE },
-  costarica:  { voice_id: 'cgSgspJ2msm6clMCkdW9', settings: SAFE },
+  // Camila aprobada por Ale, pero a velocidad natural le pareció lenta:
+  // speed 1.15 (máx útil de ElevenLabs es 1.2) la deja cerca del 1.25x
+  // que a ella le sonó "normal".
+  colombia:   { voice_id: 'MqSrMUk8EHh32HBKytrG', settings: { ...SAFE, speed: 1.15 } },
+  // Melissa - Spanish (Costa Rica), elegida por Ale el 17/08 (la anterior
+  // era un placeholder genérico que no sonaba costarricense).
+  costarica:  { voice_id: 'rDUarjldKdij6COlETSO', settings: SAFE },
   cuba:       { voice_id: '1hB7zCGWj11SeMuBseeI', settings: CARIB },
   ecuador:    { voice_id: 'DZksvRcjbVkbnIwYVMEQ', settings: SAFE },
   elsalvador: { voice_id: 'cgSgspJ2msm6clMCkdW9', settings: SAFE },
