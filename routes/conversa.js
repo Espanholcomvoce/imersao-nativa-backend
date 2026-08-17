@@ -267,8 +267,10 @@ router.post('/tts', auth, async (req, res) => {
         model: 'gpt-4o-mini-tts',
         input: text,
         voice: 'coral',
+        // el modelo nuevo acepta dirección de actuación: sin esto lee plano
+        instructions: 'Eres Paula, una amiga colombiana de 28 años de Bogotá. Habla con calidez y naturalidad, entonación expresiva y alegre, ritmo tranquilo de conversación entre amigas, acento colombiano suave.',
         response_format: 'mp3',
-        speed: 1.05
+        speed: 1.0
       })
     });
 
