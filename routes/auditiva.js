@@ -85,7 +85,8 @@ const GUIDE_VOICES = {
   ecuador:    { voice_id: 'DZksvRcjbVkbnIwYVMEQ', settings: SAFE },
   elsalvador: { voice_id: 'cgSgspJ2msm6clMCkdW9', settings: SAFE },
   espana:     { voice_id: 'iP95p4xoKVk53GoZ742B', settings: SAFE },
-  guatemala:  { voice_id: 'cgSgspJ2msm6clMCkdW9', settings: SAFE },
+  // Michelle, elegida por Ale el 18/08. Guía: Ixchel.
+  guatemala:  { voice_id: 'MbMvLOFbicjtQwgx0j2r', settings: SAFE },
   honduras:   { voice_id: 'cgSgspJ2msm6clMCkdW9', settings: SAFE },
   mexico:     { voice_id: 'P951amuWPNCJ0L15rFyC', settings: SAFE },
   nicaragua:  { voice_id: 'cgSgspJ2msm6clMCkdW9', settings: SAFE },
