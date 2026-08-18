@@ -91,7 +91,9 @@ const GUIDE_VOICES = {
   guatemala:  { voice_id: 'MbMvLOFbicjtQwgx0j2r', settings: SAFE },
   // Camila (ElevenLabs), elegida por Ale el 18/08. Guía: Xiomara.
   honduras:   { voice_id: 'z1o4UXhrDfZ9yFTF1GMZ', settings: SAFE },
-  mexico:     { voice_id: 'P951amuWPNCJ0L15rFyC', settings: SAFE },
+  // Antonio - Confident, Gentle and Clear: la elección documentada de Ale
+  // (vozes-definidas.json, 21/07). Guía masculino.
+  mexico:     { voice_id: 'htFfPSZGJwjBv1CL0aMD', settings: SAFE },
   nicaragua:  { voice_id: 'cgSgspJ2msm6clMCkdW9', settings: SAFE },
   panama:     { voice_id: 'nPczCjzI2devNBz1zQrb', settings: CARIB },
   paraguay:   { voice_id: 'XB0fDUnXU5powFXDhCwa', settings: SAFE },
