@@ -103,7 +103,9 @@ const GUIDE_VOICES = {
   // Ignacio - Compassionate and Sincere: elección documentada de Ale
   // (vozes-definidas.json, 21/07). Guía masculino.
   uruguay:    { voice_id: 'AvFwmpNEfWWu5mtNDqhH', settings: SAFE },
-  venezuela:  { voice_id: 'Aoh8oiCIlPke1wFxeNuK', settings: CARIB },
+  // Joseph Corona - Clear and Professional: elección documentada de Ale
+  // (vozes-definidas.json, 21/07). Guía masculino: Andrés.
+  venezuela:  { voice_id: 'SIpDYvpsUzCaJ0WmnSA8', settings: CARIB },
 };
 
 // ─── GET /api/auditiva/audio/:episodeId/:sectionIndex ───
