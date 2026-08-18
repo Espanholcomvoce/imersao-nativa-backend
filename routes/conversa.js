@@ -72,6 +72,26 @@ PORTUGUÉS — CÓMO MANEJARLO:
 - Siempre mantén el tono amigable al corregir, nunca de profesora
 - La idea es que absorba español natural sin presión, pero que tenga ayuda cuando la pida
 
+RITMO — REGLA DE ORO: el alumno tiene que hablar MÁS que tú.
+- Tus turnos normales: 1 o 2 frases. Máximo 3 cuando cuentas algo que vale la pena.
+- Nunca encadenes anécdota + opinión + pregunta en el mismo turno: elige UNA cosa.
+- Deja espacios: una pregunta corta y genuina invita más que un discurso.
+
+CORRECCIÓN — CUANDO TE LA PIDEN: corrige PRIMERO lo que el alumno YA dijo,
+incluida la misma frase donde te lo pidió. Formato: repites su frase en español
+correcto, un porqué de una línea, y sigues la charla con naturalidad.
+Ejemplo: pide "¿puedes corregirme se hablo errado?" → "¡Claro! Mira, sería
+'si hablo mal' — 'se' es portugués y 'errado' en español es 'mal'. ¡Pero te
+entendí perfecto! Bueno, ¿en qué andas?"
+
+HABLA SEGÚN EL NIVEL — OBLIGATORIO:
+- Iniciante (A1-A2): frases de hasta 10 palabras, vocabulario frecuente, UNA
+  pregunta por vez, nada de jerga. Ritmo pausado, ideas de a una.
+- Intermedio (B1-B2): habla natural, introduce expresiones comunes y explica
+  al vuelo la que sea difícil ("agendado, o sea, ya reservado").
+- Avanzado (C1-C2): jerga regional, dobles sentidos, opiniones para debatir,
+  y exige precisión con cariño.
+
 CONTEXTO: Nivel: ${lvl}.
 SITUACIÓN — REGLA IMPORTANTE: ${sit === 'libremente'
   ? 'Conversación libre, sin contexto fijo. Habla como amiga, propón temas variados de tu día.'
@@ -103,9 +123,12 @@ Empieza directo CONTANDO, sin "déjame contarte". Termina con una pregunta difer
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        // gpt-4.1-mini ganó el A/B de calidad de corrección (18/08). El techo
+        // de tokens es generoso: la brevedad viene del prompt (RITMO), no de
+        // cortar a Paula a mitad de frase.
+        model: 'gpt-4.1-mini',
         messages: messages,
-        max_tokens: isFirst ? 80 : 120,
+        max_tokens: isFirst ? 60 : 220,
         temperature: 0.9,
         stream: true
       })
@@ -190,10 +213,19 @@ router.post('/whisper', auth, (req, res) => {
 
       if (!audioBuffer) return res.status(400).json({ error: 'Áudio não encontrado.' });
 
+      // Anti-ruido: audio demasiado corto (un golpe, un click, la TV de
+      // fondo) no llega a Whisper — Whisper alucina frases con ruido y el
+      // alumno veía "respuestas suyas" sin haber hablado.
+      if (audioBuffer.length < 12000) {
+        return res.json({ transcript: '' });
+      }
+
       const b = 'WBoundary' + Date.now();
       const CRLF = '\r\n';
       const parts = [];
       parts.push(Buffer.from('--' + b + CRLF + 'Content-Disposition: form-data; name="model"' + CRLF + CRLF + 'whisper-1' + CRLF));
+      // Fijar idioma reduce muchísimo las alucinaciones con ruido de fondo
+      parts.push(Buffer.from('--' + b + CRLF + 'Content-Disposition: form-data; name="language"' + CRLF + CRLF + 'es' + CRLF));
       parts.push(Buffer.from('--' + b + CRLF + 'Content-Disposition: form-data; name="file"; filename="audio.webm"' + CRLF + 'Content-Type: audio/webm' + CRLF + CRLF));
       parts.push(audioBuffer);
       parts.push(Buffer.from(CRLF + '--' + b + '--' + CRLF));
@@ -215,7 +247,11 @@ router.post('/whisper', auth, (req, res) => {
       }
 
       const data = await r.json();
-      res.json({ transcript: data.text || '' });
+      let transcript = (data.text || '').trim();
+      // Filtro de alucinaciones clásicas de Whisper con silencio/ruido
+      const alucinacion = /^(gracias por ver|subt[ií]tulos|suscr[ií]bete|amara\.org|www\.|\.{3}|¡?gracias!?\.?)$/i;
+      if (transcript.length < 2 || alucinacion.test(transcript)) transcript = '';
+      res.json({ transcript });
 
     } catch (e) {
       console.error('[CONVERSA whisper]', e.message);
@@ -237,11 +273,14 @@ router.post('/tts', auth, async (req, res) => {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: 'tts-1',
+        // Misma voz que la llamada realtime (coral) para que Paula sea LA
+        // MISMA persona en chat y en llamada. Receta idéntica a conversa2,
+        // aprobada por Ale — NO cambiar las instrucciones de actuación.
+        model: 'gpt-4o-mini-tts',
         input: text,
-        voice: 'nova',
-        response_format: 'mp3',
-        speed: 1.05
+        voice: 'coral',
+        instructions: 'Eres Paula, profesora bogotana cálida y cercana. Habla con naturalidad conversacional, ritmo tranquilo, tono amable y sonriente. Español neutro de Colombia.',
+        response_format: 'mp3'
       })
     });
 
