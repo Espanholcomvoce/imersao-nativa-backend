@@ -1,0 +1,70 @@
+# Vigía de Paula — prueba el circuito completo 4 veces al día.
+# Si CUALQUIER pieza falla (login, chat, voz, transcripción o llamada),
+# el workflow falla y GitHub manda email automático avisando cuál fue.
+# Cuando todo está bien: silencio total, ningún email.
+#
+# Costo por corrida: ~US$0.005 (una mini-conversación con Paula).
+
+name: Vigía Paula
+
+on:
+  schedule:
+    # 4x al día (UTC): 03:15, 09:15, 15:15, 21:15
+    # = 00:15, 06:15, 12:15, 18:15 hora de Brasilia
+    - cron: '15 3,9,15,21 * * *'
+  workflow_dispatch: {}
+
+jobs:
+  vigia:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Circuito completo de Paula
+        env:
+          API: https://api.espanholcomvoce.com
+          EMAIL: espanholcvfaixapreta@gmail.com
+        run: |
+          set -e
+          fallo() { echo "::error::PAULA ROTA — falló: $1"; exit 1; }
+
+          echo "== 0. Salud del servidor =="
+          H=$(curl -s -m 20 "$API/health")
+          echo "$H" | grep -q '"status":"ok"' || fallo "servidor caído (/health)"
+          echo "$H" | grep -q '"openai":true' || fallo "clave OpenAI ausente"
+
+          echo "== 1. Login =="
+          TOKEN=$(curl -s -m 30 -X POST "$API/api/login" \
+            -H "Content-Type: application/json" \
+            -d "{\"email\":\"$EMAIL\"}" | python3 -c "import sys,json; print(json.load(sys.stdin).get('token',''))")
+          [ -n "$TOKEN" ] || fallo "login (no devolvió token)"
+
+          echo "== 2. Chat (cerebro de Paula) =="
+          CHAT=$(curl -s -m 60 -X POST "$API/api/conversa/chat" \
+            -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+            -d '{"message":"Hola Paula, ¿todo bien?","history":[],"level":"beginner","situation":"amigos"}')
+          echo "$CHAT" | grep -q '"delta"' || fallo "chat (Paula no respondió)"
+
+          echo "== 3. Voz de Paula (TTS coral) =="
+          TTS_SIZE=$(curl -s -m 60 -o /tmp/tts.mp3 -w "%{size_download}" \
+            -X POST "$API/api/conversa/tts" \
+            -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+            -d '{"text":"Hola, ¿cómo estás? Qué gusto escucharte."}')
+          [ "$TTS_SIZE" -gt 5000 ] || fallo "voz TTS (audio vacío o muy chico: ${TTS_SIZE}b)"
+
+          echo "== 4. Oído de Paula (whisper) =="
+          TR=$(curl -s -m 60 -X POST "$API/api/conversa/whisper" \
+            -H "Authorization: Bearer $TOKEN" \
+            -F "audio=@.github/test-assets/voz-prueba.mp3;type=audio/webm" \
+            | python3 -c "import sys,json; print(json.load(sys.stdin).get('transcript',''))")
+          echo "transcript: $TR"
+          echo "$TR" | grep -qi "café" || fallo "transcripción (no entendió el audio de prueba)"
+
+          echo "== 5. Llamada (token realtime) =="
+          RT=$(curl -s -m 30 -X POST "$API/api/realtime/token" \
+            -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+            -d '{"level":"beginner","situation":"amigos"}')
+          echo "$RT" | grep -q "client_secret" || fallo "llamada realtime (sin token de sesión)"
+
+          echo "✅ Paula 100%: servidor, login, chat, voz, oído y llamada funcionando."
