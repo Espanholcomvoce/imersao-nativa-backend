@@ -100,7 +100,9 @@ const GUIDE_VOICES = {
   peru:       { voice_id: 'WrKMouCyVAmTemNLZkOw', settings: SAFE },
   puertorico: { voice_id: 'ISTw2UT8hNs80bzKPenA', settings: CARIB },
   dominicana: { voice_id: '2vyVHGyPYK7eCnfdVvk9', settings: CARIB },
-  uruguay:    { voice_id: '1WXz8v08ntDcSTeVXMN2', settings: SAFE },
+  // Ignacio - Compassionate and Sincere: elección documentada de Ale
+  // (vozes-definidas.json, 21/07). Guía masculino.
+  uruguay:    { voice_id: 'AvFwmpNEfWWu5mtNDqhH', settings: SAFE },
   venezuela:  { voice_id: 'Aoh8oiCIlPke1wFxeNuK', settings: CARIB },
 };
 
