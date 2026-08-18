@@ -216,7 +216,9 @@ router.post('/whisper', auth, (req, res) => {
       // Anti-ruido: audio demasiado corto (un golpe, un click, la TV de
       // fondo) no llega a Whisper — Whisper alucina frases con ruido y el
       // alumno veía "respuestas suyas" sin haber hablado.
-      if (audioBuffer.length < 12000) {
+      // ~6KB de webm/opus ≈ 1s de audio: mata clicks y golpes sin descartar
+      // un "¡Hola Paula!" corto y legítimo.
+      if (audioBuffer.length < 6000) {
         return res.json({ transcript: '' });
       }
 
