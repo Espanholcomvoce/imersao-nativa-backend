@@ -79,7 +79,9 @@ const GUIDE_VOICES = {
   // Melissa - Spanish (Costa Rica), elegida por Ale el 17/08 (la anterior
   // era un placeholder genérico que no sonaba costarricense).
   costarica:  { voice_id: 'rDUarjldKdij6COlETSO', settings: SAFE },
-  cuba:       { voice_id: '1hB7zCGWj11SeMuBseeI', settings: CARIB },
+  // Liuver Duran, elegida por Ale el 18/08 (la anterior, Yasser, no
+  // convenció). El guía pasó de Yanelis (mujer) a Yasel (hombre).
+  cuba:       { voice_id: 'N9oBfGvJMOhmjRantK3L', settings: CARIB },
   ecuador:    { voice_id: 'DZksvRcjbVkbnIwYVMEQ', settings: SAFE },
   elsalvador: { voice_id: 'cgSgspJ2msm6clMCkdW9', settings: SAFE },
   espana:     { voice_id: 'iP95p4xoKVk53GoZ742B', settings: SAFE },
