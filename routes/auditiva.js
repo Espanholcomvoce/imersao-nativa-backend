@@ -89,7 +89,8 @@ const GUIDE_VOICES = {
   espana:     { voice_id: '851ejYcv2BoNPjrkw93G', settings: SAFE },
   // Michelle, elegida por Ale el 18/08. Guía: Ixchel.
   guatemala:  { voice_id: 'MbMvLOFbicjtQwgx0j2r', settings: SAFE },
-  honduras:   { voice_id: 'cgSgspJ2msm6clMCkdW9', settings: SAFE },
+  // Camila (ElevenLabs), elegida por Ale el 18/08. Guía: Xiomara.
+  honduras:   { voice_id: 'z1o4UXhrDfZ9yFTF1GMZ', settings: SAFE },
   mexico:     { voice_id: 'P951amuWPNCJ0L15rFyC', settings: SAFE },
   nicaragua:  { voice_id: 'cgSgspJ2msm6clMCkdW9', settings: SAFE },
   panama:     { voice_id: 'nPczCjzI2devNBz1zQrb', settings: CARIB },
