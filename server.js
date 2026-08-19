@@ -55,7 +55,7 @@ app.use(cors({
     callback(new Error(`CORS: origem não permitida: ${origin}`));
   },
   methods: ['GET', 'POST', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Admin-Token'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Admin-Token', 'X-Dispositivo'],
   credentials: true
 }));
 
