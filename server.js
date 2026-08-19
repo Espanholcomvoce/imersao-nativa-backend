@@ -28,7 +28,9 @@ const allowedOrigins = [
   'http://localhost:5500',
   'http://127.0.0.1:5500',
   'http://localhost:8080',
+  'http://127.0.0.1:8788',
   'https://app.espanholcomvoce.com',
+  'https://viagens.espanholcomvoce.com',
   'https://imersao-nativa.espanholcvfaixapreta.workers.dev',
   'https://app-imersao-nativa.pages.dev',
   'https://imersao-nativa-plataforma.pages.dev',
@@ -39,16 +41,21 @@ const allowedOrigins = [
 // Cobre a home (app-imersao-nativa) e a cópia do app de prática (imersao-nativa-plataforma).
 const platformOriginRe = /^https:\/\/([a-z0-9-]+\.)?(app-imersao-nativa|imersao-nativa-plataforma)\.pages\.dev$/;
 
+// Apps de produto independentes em Cloudflare Pages: produção + previews.
+// Cada um tem o seu cadeado próprio; aqui só liberamos a origem.
+const produtoOriginRe = /^https:\/\/([a-z0-9-]+\.)?(espanhol-viagens|espanhol-negocios)\.pages\.dev$/;
+
 app.use(cors({
   origin: (origin, callback) => {
     if (!origin) return callback(null, true);
     if (allowedOrigins.includes(origin)) return callback(null, true);
     if (platformOriginRe.test(origin)) return callback(null, true);
+    if (produtoOriginRe.test(origin)) return callback(null, true);
     console.warn(`[CORS] Origem bloqueada: ${origin}`);
     callback(new Error(`CORS: origem não permitida: ${origin}`));
   },
   methods: ['GET', 'POST', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Admin-Token'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Admin-Token', 'X-Dispositivo'],
   credentials: true
 }));
 
@@ -107,6 +114,7 @@ app.get('/', (req, res) => {
 });
 
 app.use('/api/login', loginLimiter, require('./routes/login'));
+app.use('/api/viagens', loginLimiter, require('./routes/viagens'));
 app.use('/api/chat', require('./routes/chat'));
 app.use('/api/tts', ttsLimiter, require('./routes/tts'));
 app.use('/api/realtime', require('./routes/realtime-conversation'));
