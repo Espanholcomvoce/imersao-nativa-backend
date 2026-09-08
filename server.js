@@ -133,7 +133,7 @@ app.use('/api/comunidad', require('./routes/comunidad'));
 // tiene un error, el servidor ARRANCA IGUAL sin ella y las rutas de los
 // alumnos siguen vivas. (Un error de sintaxis en conversa2 tumbo el server
 // unos minutos hoy; esto lo hace imposible de repetir.)
-for (const [ruta, archivo] of [['/api/conversa2', './routes/conversa2'], ['/api/realtime2', './routes/realtime2']]) {
+for (const [ruta, archivo] of [['/api/conversa2', './routes/conversa2'], ['/api/realtime2', './routes/realtime2'], ['/api/chat2', './routes/chat2']]) {
   try {
     app.use(ruta, require(archivo));
   } catch (err) {
