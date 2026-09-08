@@ -1,0 +1,183 @@
+{
+ "origem": "Material publicado da Ale: isca \"20 sinais\" e guia \"palavras parecidas\". Regerar com scripts/gerar-decalques.js quando as iscas mudarem.",
+ "geradoEm": "2026-09-08",
+ "decalques": [
+  {
+   "titulo": "\"Asistir\" uma película",
+   "mecanismo": "falso amigo",
+   "errado": "Asistí una película ayer.",
+   "certo": "Vi una película ayer.",
+   "porque": "Você quer contar que viu um filme, e \"assisti um filme\" sai direto: \"asistí una película\". Mas em espanhol asistir é comparecer (\"asistí a la reunión\" = fui à reunião). Filme e TV se ven."
+  },
+  {
+   "titulo": "\"Pegar\" el autobús",
+   "mecanismo": "falso amigo",
+   "errado": "Voy a pegar el autobús.",
+   "certo": "Voy a tomar el autobús.",
+   "porque": "Em espanhol pegar é bater ou colar. Você acabou de anunciar que vai bater no ônibus. Ônibus, táxi e avião se toman (na Espanha, coger; no México e na Argentina, agarrar)."
+  },
+  {
+   "titulo": "\"Acerca\" de mi casa",
+   "mecanismo": "palavra parecida",
+   "errado": "La tienda está acerca de mi casa.",
+   "certo": "La tienda está cerca de mi casa.",
+   "porque": "Acerca de significa \"a respeito de\" (um livro acerca de história). Perto é cerca de. Uma letra a mais e a loja vira um assunto."
+  },
+  {
+   "titulo": "\"Gané\" de presente",
+   "mecanismo": "falso amigo",
+   "errado": "Gané una bicicleta por mi cumpleaños.",
+   "certo": "Me regalaron una bicicleta por mi cumpleaños.",
+   "porque": "\"Ganhei de presente\" não usa ganar: ganar é vencer, conquistar. Presente se recibe, mas o que o nativo diz mesmo é me lo regalaron (me deram de presente)."
+  },
+  {
+   "titulo": "\"Ven luego\" (vem logo!)",
+   "mecanismo": "falso amigo",
+   "errado": "Ven luego. (querendo dizer: \"vem logo!\")",
+   "certo": "Ven rápido, por favor.",
+   "porque": "Na maior parte dos países, luego hoje significa depois, não \"logo/rápido\". Você pediu pra pessoa vir... mais tarde. Pressa é ahora, ya ou pronto. (\"Hasta luego\" = até depois.) Curiosidade: no México, \"luego luego\" sim quer dizer \"agora mesmo\"."
+  },
+  {
+   "titulo": "\"Me recuerdo de...\"",
+   "mecanismo": "estrutura do português",
+   "errado": "Me recuerdo de nuestra última conversación.",
+   "certo": "Me acuerdo de nuestra última conversación.",
+   "porque": "Em português é \"eu me lembro\", e o espanhol tem dois verbos: recordar (sem \"me\": recuerdo algo) e acordarse (com \"me\": me acuerdo de algo). Misturar as duas estruturas cria \"me recuerdo de...\", uma forma que não usamos nesse contexto."
+  },
+  {
+   "titulo": "\"Tiene\" una farmacia aquí",
+   "mecanismo": "tradução literal",
+   "errado": "Tiene una farmacia aquí cerca.",
+   "certo": "Hay una farmacia aquí cerca.",
+   "porque": "Você olha ao redor e quer dizer que existe uma farmácia ali. Sem perceber, a mente busca a estrutura do português: \"tem uma farmácia aqui\", e sai \"tiene una farmacia\". Em espanhol, quando a ideia é \"existe\", a palavra é hay. Tener não substitui esse uso."
+  },
+  {
+   "titulo": "\"Yo gusto de...\"",
+   "mecanismo": "estrutura do português",
+   "errado": "Yo gusto de la música clásica.",
+   "certo": "Me gusta la música clásica.",
+   "porque": "\"Eu gosto de...\" é tão automático que a frase sai montada em português. Existe um gustar de em espanhol, mas é formal e literário (\"gusta de pasear por las tardes\"). Na fala do dia a dia, o espanhol pensa ao contrário: a coisa é que te agrada. Me gusta la música (e me gustan los deportes, no plural)."
+  },
+  {
+   "titulo": "\"Hace sentido\"",
+   "mecanismo": "tradução literal",
+   "errado": "Hace sentido lo que dices.",
+   "certo": "Tiene sentido lo que dices.",
+   "porque": "A expressão vem pronta do português: \"faz sentido\". Só que o espanhol não monta essa ideia com hacer: é tener sentido. Expressão traduzida ao pé da letra é onde a tradução mental mais aparece."
+  },
+  {
+   "titulo": "\"Voy la tienda\"",
+   "mecanismo": "estrutura do português",
+   "errado": "Voy la tienda.",
+   "certo": "Voy a la tienda.",
+   "porque": "Em português a preposição vem grudada no artigo (\"vou na loja\") e, na hora de traduzir, ela some. Em espanhol o a depois de ir é obrigatório, sempre: voy a la tienda, vamos a casa de María."
+  },
+  {
+   "titulo": "Responder só com o verbo",
+   "mecanismo": "estrutura do português",
+   "errado": "¿Te gusta el chocolate? — Gusto.",
+   "certo": "¿Te gusta el chocolate? Sí, me gusta.",
+   "porque": "Responder com o verbo (\"Gosto.\", \"Vou.\", \"Quero.\") é herança do português. Em espanhol soa incompleto: a resposta natural leva sí ou no: \"Sí, me gusta\"."
+  },
+  {
+   "titulo": "\"Mucho inteligente\"",
+   "mecanismo": "automatização",
+   "errado": "Ella es mucho inteligente.",
+   "certo": "Ella es muy inteligente.",
+   "porque": "Em português \"muito\" serve pra tudo. O espanhol divide: muy antes de adjetivo e advérbio, mucho com substantivo e verbo. Regra simples de entender, difícil de automatizar."
+  },
+  {
+   "titulo": "\"Lo carro\"",
+   "mecanismo": "automatização",
+   "errado": "Lo carro está en la calle.",
+   "certo": "El carro está en la calle.",
+   "porque": "O \"o\" do português puxa pro \"lo\", mas o artigo masculino em espanhol é el. \"Lo\" existe, só que é outra coisa (pronome neutro: \"lo mejor\", \"lo sé\")."
+  },
+  {
+   "titulo": "\"La árbol\"",
+   "mecanismo": "automatização",
+   "errado": "La árbol está en el parque.",
+   "certo": "El árbol está en el parque.",
+   "porque": "Vários gêneros trocam entre os idiomas: a árvore → el árbol, o sangue → la sangre, o leite → la leche, o nariz → la nariz. Confiar no gênero do português é cilada."
+  },
+  {
+   "titulo": "\"Mas\" tengo que trabajar",
+   "mecanismo": "uso natural",
+   "errado": "Quiero ir al cine, mas tengo que trabajar.",
+   "certo": "Quiero ir al cine, pero tengo que trabajar.",
+   "porque": "\"Mas\" até existe em espanhol e não está errado, mas é literário, coisa de romance antigo. Na fala de todo dia, oposição é pero. Usar \"mas\" numa conversa soa estranho na hora."
+  },
+  {
+   "titulo": "\"Quedé\" en casa",
+   "mecanismo": "estrutura do português",
+   "errado": "Quedé en casa todo el día.",
+   "certo": "Me quedé en casa todo el día.",
+   "porque": "Ficar em algum lugar é quedarse, reflexivo: me quedé. Sem o \"me\", quedar é outra coisa: ficar situado (\"el banco queda cerca\") e, na Espanha, combinar (\"quedamos a las ocho\")."
+  },
+  {
+   "titulo": "\"Tú es...\"",
+   "mecanismo": "automatização",
+   "errado": "Tú es muy inteligente.",
+   "certo": "Tú eres muy inteligente.",
+   "porque": "O \"você é\" empurra o es pra tudo. Mas com tú o verbo é eres. O \"es\" fica pro usted e pra ele/ela: usted es, él es, tú eres. (Na Argentina você vai ouvir vos sos.)"
+  },
+  {
+   "titulo": "\"Las ropas\"",
+   "mecanismo": "uso natural",
+   "errado": "Voy a lavar las ropas.",
+   "certo": "Voy a lavar la ropa.",
+   "porque": "Em espanhol ropa é coletivo e vive no singular: mucha ropa, tu ropa, lavar la ropa. O plural \"las ropas\" existe na gramática, mas ninguém fala assim no dia a dia."
+  },
+  {
+   "titulo": "\"La más vieja\"",
+   "mecanismo": "uso natural",
+   "errado": "Yo soy la más vieja de mis hermanos.",
+   "certo": "Yo soy la mayor de mis hermanos.",
+   "porque": "Viejo pra pessoa pode soar rude, dependendo do tom e da situação. Entre irmãos e idades, o natural é mayor (mais velho) e menor ou más joven (mais novo). Detalhe de educação que nativo percebe na hora."
+  },
+  {
+   "titulo": "\"Estoy caliente\"",
+   "mecanismo": "duplo sentido",
+   "errado": "Estoy caliente.",
+   "certo": "Tengo mucho calor hoy.",
+   "porque": "Calor de 35 graus e a frase escapa: \"estoy caliente\". Ela existe, só que normalmente significa que você está excitado (e, em alguns países, irritado). Pra temperatura, calor não se \"está\": se tem: tengo calor."
+  }
+ ],
+ "paresConfusos": [
+  {
+   "a": "actitud",
+   "b": "aptitud",
+   "sentidoA": "a forma de se comportar (atitude)"
+  },
+  {
+   "a": "prejuicio",
+   "b": "perjuicio",
+   "sentidoA": "uma opinião preconcebida (preconceito)"
+  },
+  {
+   "a": "especie",
+   "b": "especia",
+   "sentidoA": "um tipo ou categoria (espécie)"
+  },
+  {
+   "a": "casualidad",
+   "b": "causalidad",
+   "sentidoA": "uma coincidência, um acaso"
+  },
+  {
+   "a": "hay",
+   "b": "ahí",
+   "sentidoA": "ay"
+  },
+  {
+   "a": "ahí",
+   "b": "ay",
+   "sentidoA": "existe, tem (do verbo haber)"
+  },
+  {
+   "a": "votar",
+   "b": "botar",
+   "sentidoA": "escolher numa votação (votar)"
+  }
+ ]
+}

@@ -4,76 +4,54 @@
  * POST /api/chat2            → Matías e temas de escrita
  * POST /api/chat2/correction → corrige um texto em espanhol
  *
- * Cópia PARALELA de routes/chat.js. Existe para que a plataforma nova possa
- * evoluir (modelo melhor, prompt melhor) sem tocar em /api/chat, que é o que
- * o app de prática dos alunos usa hoje. Decisão da Ale em 08/09/2026.
+ * A correção roda em Sonnet, não em Haiku: corrigir é ação rara e errar sai
+ * caro. O corretor antigo aprovava "gané un regalo" e ainda repetia o erro na
+ * versão corrigida.
  *
- * Duas diferenças em relação à rota antiga:
- *   1. A correção roda em Sonnet, não em Haiku. Corrigir texto é raro e
- *      errar sai caro: o corretor antigo aprovava "gané un regalo".
- *   2. O corretor recebe instruções de verdade, não só o formato da resposta:
- *      a primeira tarefa dele é caçar decalque do português.
+ * A lista de decalques NÃO é escrita à mão: sai de data/decalques.json, que é
+ * gerado do material publicado da Ale (a isca dos 20 sinais e o guia de
+ * palavras parecidas). Quando ela atualizar as iscas, roda-se de novo o
+ * scripts/gerar-decalques.js e o corretor aprende junto.
  */
 
 const express = require('express');
 const router = express.Router();
 const Anthropic = require('@anthropic-ai/sdk');
 const { authWithRevalidation } = require('../middleware/auth');
+const DECALQUES = require('../data/decalques.json');
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 const MODELO_CORRECCION = 'claude-sonnet-5';
 const MODELO_RAPIDO = 'claude-haiku-4-5-20251001';
 
-/* ─────────────────────────────────────────────────────────────
-   Decalques de português que o corretor precisa caçar.
+/* Monta a parte do comando que vem do material da Ale. Uma vez só, no boot. */
+function listaDecalques() {
+  const erros = DECALQUES.decalques.map((d, i) =>
+    `${i + 1}. [${d.mecanismo}] ✗ "${d.errado}" → ✓ "${d.certo}"\n   ${d.porque}`
+  ).join('\n');
+  const pares = DECALQUES.paresConfusos.map(p => `- ${p.a} / ${p.b}`).join('\n');
+  return `ERRORES REALES DE ESTAS ALUMNAS (material de la escuela, no inventado):
+${erros}
 
-   Esta lista é o coração da correção: são os erros que um falante
-   de português comete e que "soam certos" para ele. Sem isso o
-   corretor elogia a frase e corrige só o acessório.
-
-   PENDENTE DE VALIDAÇÃO DA ALE antes de considerar fechada.
-   ───────────────────────────────────────────────────────────── */
-const DECALQUES = `
-VERBOS Y ESTRUCTURAS (los más graves, porque suenan naturales al brasileño):
-- "ganar un regalo" → RECIBIR un regalo / me regalaron. En español no se gana un regalo.
-- "estoy con frío / con hambre / con sueño" → TENGO frío / hambre / sueño.
-- "yo gusto de..." / "gusto mucho de" → ME GUSTA...
-- "más grande que mí / que ti" → más grande QUE YO / QUE TÚ.
-- "la gente son / la gente piensan" → LA GENTE ES / PIENSA (singular).
-- "ir en el médico / en la fiesta" → IR AL médico / A LA fiesta.
-- "quedar" con sentido de permanecer sin "-se" cuando lo pide.
-- gerundio del portugués: "estoy precisando" → NECESITO.
-- "hace dos años que estudio" bien; "tengo dos años estudiando" es decalque.
-
-FALSOS AMIGOS FRECUENTES (el sentido cambia por completo):
-- presente (obsequio) → REGALO. "Presente" es lo que está aquí/ahora.
-- oficina (lugar de trabajo) → OFICINA es correcto en español; el TALLER es de coches.
-- vaso → en español es el de beber; el portugués "vaso" (florero) es JARRÓN.
-- rato → en español es un momento; el animal es RATÓN.
-- exquisito → delicioso, NO extraño. "Esquisito" del portugués es RARO.
-- largo → en español es de longitud; "largo" del portugués (ancho) es ANCHO.
-- embarazada → grávida, NO avergonzada.
-- borracha → ebria, NO goma de borrar.
-- polvo → en español es tierra fina; el molusco es PULPO.
-- cachorro → en español es cría de perro; el perro adulto es PERRO.
-- brincar → en español es saltar; jugar es JUGAR.
-- todavía → aún; el portugués "todavia" es SIN EMBARGO.
-- cena → comida de la noche; la escena de una película es ESCENA.
-- apellido → sobrenome del portugués.
-- ligar → en España es llamar por teléfono; encender es ENCENDER.
-`;
+PARES QUE SE CONFUNDEN ENTRE SÍ:
+${pares}`;
+}
 
 const PROMPT_CORRECCION = `Eres el corrector de escritura del Programa Imersão Nativa®, la escuela de Alejandra Fajardo para brasileños que aprenden español. Corriges a una alumna que piensa en portugués mientras escribe.
 
 TU PRIMERA TAREA, ANTES DE CUALQUIER OTRA: buscar decalques del portugués. Son los errores que a ella le suenan bien y por eso nunca los corrige sola. Si dejas pasar uno, la corrección falló, por más bonita que quede.
-${DECALQUES}
+
+${listaDecalques()}
+
+Esta lista es el patrón de lo que hay que cazar, no el límite: si aparece otro decalque del portugués del mismo tipo, corrígelo igual.
 
 REGLAS DE HONESTIDAD:
 - NUNCA elogies una frase que todavía tiene un decalque sin corregir.
 - La "versión corregida" tiene que estar 100% limpia: si repites el error ahí, la alumna lo aprende mal.
-- No inventes reglas ni orígenes de palabras. Si no estás seguro de algo, no lo afirmes: corrige solo lo que sabes.
-- Si el texto está realmente bien, dilo y no fabriques errores para llenar el formato.
+- No inventes reglas, orígenes ni frecuencias de uso. Si no estás seguro, no lo afirmes: corrige solo lo que sabes.
+- Si el texto está bien, dilo y no fabriques errores para llenar el formato.
+- El español es UNO solo: no digas "en mi idioma" ni presentes una variante como la única correcta.
 
 FORMATO OBLIGATORIO DE RESPUESTA:
 ✅ **Lo que está bien:**
@@ -94,7 +72,8 @@ REGLAS:
 - Responde en español; puedes explicar en portugués cuando la gramática es difícil.
 - Da siempre ejemplos en frases completas, no palabras sueltas.
 - Señala los decalques del portugués cuando aparezcan: son el error que más traba a la alumna.
-- No inventes reglas ni datos sobre el idioma. Sin certeza, dilo con naturalidad.`;
+- No inventes reglas ni datos sobre el idioma. Sin certeza, dilo con naturalidad.
+- El español es UNO solo: no presentes una variante como la única correcta.`;
 
 // ─── POST /api/chat2/correction ───
 router.post('/correction', authWithRevalidation, async (req, res) => {
@@ -112,10 +91,7 @@ router.post('/correction', authWithRevalidation, async (req, res) => {
       model: MODELO_CORRECCION,
       max_tokens: 1000,
       system: PROMPT_CORRECCION + `\n\nNivel de la alumna: ${level}`,
-      messages: [{
-        role: 'user',
-        content: `Corrige este texto en español:\n\n"${text.trim()}"`
-      }]
+      messages: [{ role: 'user', content: `Corrige este texto en español:\n\n"${text.trim()}"` }]
     });
 
     console.log(`[CHAT2 correction] ${req.user.email} | nivel:${level} | tokens:${response.usage.input_tokens}+${response.usage.output_tokens}`);
@@ -138,7 +114,7 @@ router.post('/', authWithRevalidation, async (req, res) => {
     return res.status(400).json({ error: 'Mensagem é obrigatória.' });
   }
 
-  const recentHistory = (Array.isArray(history) ? history : [])
+  const recente = (Array.isArray(history) ? history : [])
     .filter(m => m && (m.role === 'user' || m.role === 'assistant') && m.content)
     .slice(-20)
     .map(m => ({ role: m.role, content: String(m.content).slice(0, 2000) }));
@@ -148,7 +124,7 @@ router.post('/', authWithRevalidation, async (req, res) => {
       model: MODELO_RAPIDO,
       max_tokens: 700,
       system: `${PROMPT_CHAT}\n\nNivel de la alumna: ${level}`,
-      messages: [...recentHistory, { role: 'user', content: message.trim() }]
+      messages: [...recente, { role: 'user', content: message.trim() }]
     });
 
     res.json({
