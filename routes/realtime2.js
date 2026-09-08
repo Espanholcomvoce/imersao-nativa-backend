@@ -75,6 +75,9 @@ router.post('/token', authWithRevalidation, async (req, res) => {
     'viaje': 'planeando un viaje juntas',
     'mercado': 'en el mercado/supermercado haciendo compras',
     'amigos': 'tomando algo con amigas',
+    'hogar': 'en casa, charlando de la vida doméstica y la rutina',
+    'compras': 'en una tienda, mirando ropa y resolviendo precios, talles y devoluciones',
+    'series': 'charlando de las series y películas que están viendo',
     'libre': 'libremente'
   };
   const lvlMap = {

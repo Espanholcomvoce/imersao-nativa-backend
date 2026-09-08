@@ -31,6 +31,7 @@ const allowedOrigins = [
   'http://127.0.0.1:8788',
   'https://app.espanholcomvoce.com',
   'https://viagens.espanholcomvoce.com',
+  'https://plataforma.espanholcomvoce.com',  // plataforma nova (Pilar 2), domínio próprio desde 08/09/2026
   'https://imersao-nativa.espanholcvfaixapreta.workers.dev',
   'https://app-imersao-nativa.pages.dev',
   'https://imersao-nativa-plataforma.pages.dev',
