@@ -64,8 +64,12 @@ router.post('/token', authWithRevalidation, async (req, res) => {
   const { level, situation } = req.body || {};
   // agregados que NO tocan la voz (la receta de la voz es la de ayer, intacta):
   const nombre = String(req.body.nombre || '').trim().slice(0, 40);
+  // Costo de la llamada (decisión de Ale, 12/11/2026): modelo económico por defecto.
+  // Se cambia sin tocar código con las variables REALTIME_MODEL y REALTIME_MAX_TOKENS.
   const RT_MODELOS = new Set(['gpt-realtime', 'gpt-realtime-mini', 'gpt-realtime-2.1-mini']);
-  const rtModelo = RT_MODELOS.has(req.body.modelo) ? req.body.modelo : 'gpt-realtime';
+  const RT_PADRAO = RT_MODELOS.has(process.env.REALTIME_MODEL) ? process.env.REALTIME_MODEL : 'gpt-realtime-2.1-mini';
+  const RT_MAX_TOKENS = parseInt(process.env.REALTIME_MAX_TOKENS || '1500') || 1500;
+  const rtModelo = RT_MODELOS.has(req.body.modelo) ? req.body.modelo : RT_PADRAO;
 
   const sitMap = {
     'café': 'en un café',
@@ -99,14 +103,19 @@ PERSONALIDAD:
 - Compartes cosas sin que te pregunten: recomendaciones, opiniones, historias
 - NO preguntas después de cada frase. A veces solo comentas, opinas o cuentas algo
 - Cuando preguntas, es porque de verdad te interesa, no por rellenar
-- Mezcla turnos cortos con turnos más largos cuando cuentas algo interesante
+- Tus anécdotas son cortitas: 2 o 3 frases y le devuelves la palabra al alumno
 
 REGLAS DE CONVERSACIÓN:
 - Hablas en español latinoamericano natural, con expresiones coloquiales
 - NUNCA menciones que eres IA, asistente, profesora ni programa
-- Si el alumno habla poco, tú llevas la charla: propones temas, cuentas cosas
+- Si el alumno habla poco, lo animas con preguntas fáciles y concretas, sin ponerte a hablar tú de más
 - Si el alumno habla mucho, escuchas y reaccionas genuinamente
 - Varía tus reacciones: "¡Qué cool!", "Ay, no sabía eso", "Uy, qué fuerte", "Jajaja eso me mató"
+
+RITMO — REGLA IMPORTANTE:
+- Tus turnos son CORTOS: de 1 a 3 frases, unos 10 a 15 segundos. Nunca monólogos
+- El que más tiene que hablar es el alumno: está practicando. Tú comentas breve y le pasas la palabra
+- Si te pide que le cuentes algo más largo o que le expliques algo, puedes extenderte un poco, y luego vuelves a turnos cortos
 
 IDIOMA — REGLA ABSOLUTA:
 - Tú SIEMPRE hablas en español, SIEMPRE, sin excepción
@@ -152,7 +161,7 @@ NO te presentes como Paula con biografía completa. Métete directamente en el e
 
   try {
     // Endpoint NOVO (GA): /v1/realtime/client_secrets
-    const r = await fetch('https://api.openai.com/v1/realtime/client_secrets', {
+    const crear = (modeloSesion) => fetch('https://api.openai.com/v1/realtime/client_secrets', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${OPENAI_API_KEY}`,
@@ -161,7 +170,7 @@ NO te presentes como Paula con biografía completa. Métete directamente en el e
       body: JSON.stringify({
         session: {
           type: 'realtime',
-          model: rtModelo,
+          model: modeloSesion,
           audio: {
             input: {
               transcription: { model: 'whisper-1' },
@@ -176,10 +185,17 @@ NO te presentes como Paula con biografía completa. Métete directamente en el e
             output: { voice: 'coral' }
           },
           instructions,
-          max_output_tokens: 'inf'
+          max_output_tokens: RT_MAX_TOKENS
         }
       })
     });
+    let modeloUsado = rtModelo;
+    let r = await crear(rtModelo);
+    if (!r.ok && rtModelo !== 'gpt-realtime') {
+      console.error('[REALTIME] modelo', rtModelo, 'rechazado:', r.status, (await r.text()).slice(0, 200), '-> gpt-realtime');
+      modeloUsado = 'gpt-realtime';
+      r = await crear('gpt-realtime');
+    }
 
     if (!r.ok) {
       const err = await r.text();
@@ -191,6 +207,7 @@ NO te presentes como Paula con biografía completa. Métete directamente en el e
     console.log(`[REALTIME] Token gerado: ${email} | Restam ${Math.floor(remaining / 60)}min`);
     res.json({
       client_secret: { value: data.value },
+      modelo: modeloUsado,
       remaining_seconds: remaining,
       heartbeat_interval_seconds: HEARTBEAT_INCREMENT_SECONDS
     });
